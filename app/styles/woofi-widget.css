@@ -1,0 +1,46 @@
+/* WooFi Widget Color Overrides */
+
+.el-button.el-button--primary {
+  background: rgb(var(--oui-color-primary)) !important;
+  border-color: rgb(var(--oui-color-primary)) !important;
+  color: rgb(var(--oui-color-primary-contrast)) !important;
+}
+
+.el-button.el-button--primary:hover {
+  background: rgb(var(--oui-color-primary-light)) !important;
+  border-color: rgb(var(--oui-color-primary-light)) !important;
+}
+
+.el-button.el-button--primary.is-disabled {
+  background: rgb(var(--oui-color-base-3)) !important;
+  border-color: rgb(var(--oui-color-base-3)) !important;
+  color: rgba(var(--oui-color-base-foreground), 0.4) !important;
+}
+
+.dex .swap {
+  background: linear-gradient(135deg, rgb(var(--oui-gradient-primary-start)) 0%, rgb(var(--oui-gradient-primary-end)) 100%) !important;
+  border-radius: var(--oui-rounded-lg) !important;
+  border: 1px solid rgba(var(--oui-color-primary), 0.2) !important;
+}
+
+.dex .swap .block {
+  background: rgb(var(--oui-color-base-8)) !important;
+  border: 1px solid rgba(var(--oui-color-line), 0.1) !important;
+  border-radius: var(--oui-rounded-lg) !important;
+}
+
+.el-dialog {
+  background: rgb(var(--oui-color-base-8)) !important;
+  border-radius: var(--oui-rounded-lg) !important;
+  border: 1px solid rgb(var(--oui-color-line) / 0.06) !important;
+}
+
+.coin-input .input-main {
+  background: rgb(var(--oui-color-base-3)) !important;
+  border-radius: var(--oui-rounded-xl) !important;
+}
+
+.dex .swap input {
+  background: rgb(var(--oui-color-base-3)) !important;
+  color: rgb(var(--oui-color-base-foreground)) !important;
+}

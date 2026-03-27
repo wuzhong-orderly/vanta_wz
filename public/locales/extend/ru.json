@@ -1,0 +1,11 @@
+{
+  "extend.tradingRewards.description": "Торгуйте с Orderly, чтобы заработать ORDER",
+  "extend.affiliate.tag": "40% Rebate",
+  "extend.affiliate.description": "Зарабатывайте больше как партнер Orderly",
+  "extend.staking": "Ставки",
+  "extend.staking.description": "Ставка ORDER/esORDER для приобретения VALOR",
+  "extend.swap": "Спот",
+  "extend.nav.csTeam": "Команда CS",
+  "extend.nav.userManual": "Руководство",
+  "extend.nav.more": "Ещё"
+}

@@ -1,0 +1,11 @@
+{
+  "extend.tradingRewards.description": "Opera con Orderly para ganar ORDER",
+  "extend.affiliate.tag": "40% de reembolso",
+  "extend.affiliate.description": "Gana más como afiliado de Orderly",
+  "extend.staking": "Staking",
+  "extend.staking.description": "Haz staking de ORDER/esORDER para adquirir VALOR",
+  "extend.swap": "Spot",
+  "extend.nav.csTeam": "Equipo CS",
+  "extend.nav.userManual": "Manual de usuario",
+  "extend.nav.more": "Más"
+}

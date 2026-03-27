@@ -1,0 +1,201 @@
+@import "@orderly.network/ui/dist/styles.css";
+@import "../styles/theme.css";
+@import "../styles/fonts.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* hide trading rewards on mobile */
+.oui-portfolio-page .oui-box.oui-flex.oui-flex-nowrap>div:nth-child(2).oui-box.oui-flex.oui-justify-start.oui-flex-nowrap.oui-relative {
+  display: none;
+}
+
+/* Futures nav item special pill effect */
+.futures-nav-item {
+  background: rgba(0, 228, 171, 0.1) !important;
+  border: 1px solid rgba(0, 228, 171, 0.5) !important;
+  border-radius: 9999px !important;
+  padding: 4px 14px !important;
+  color: rgb(0, 228, 171) !important;
+  transition: all 0.2s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.futures-nav-item::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background-color: rgba(0, 228, 171, 0.18);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.futures-nav-item:hover {
+  background: rgba(0, 228, 171, 0.18) !important;
+  border-color: rgba(0, 228, 171, 0.8) !important;
+}
+
+
+/* Remove the active underline indicator on Futures tab */
+.futures-nav-item[data-actived="true"]::before,
+.futures-nav-item[data-active="true"]::before,
+.futures-nav-item.oui-text-base-contrast::before {
+  display: none !important;
+  height: 0 !important;
+  border: none !important;
+}
+
+/* Hide the absolute-positioned active underline indicator inside Futures tab */
+.futures-nav-item>div[class*="oui-absolute"],
+.futures-nav-item>div[style*="position: absolute"],
+.futures-nav-item>div[style*="position:absolute"],
+.futures-nav-item>.oui-absolute,
+.futures-nav-item>div:last-child:not(:first-child) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+/* Vanta Genesis Points special nav button */
+.vanta-genesis-points-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(0, 228, 171) !important;
+  background: rgba(0, 228, 171, 0.08);
+  border: 1px solid rgba(0, 228, 171, 0.45);
+  white-space: nowrap;
+  text-decoration: none !important;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.vanta-genesis-points-btn:hover {
+  background: rgba(0, 228, 171, 0.16);
+  border-color: rgba(0, 228, 171, 0.8);
+  box-shadow: 0 0 12px rgba(0, 228, 171, 0.2);
+}
+
+.vanta-genesis-points-icon {
+  flex-shrink: 0;
+  stroke: rgb(0, 228, 171);
+}
+
+/* Theme toggle button */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+[data-oui-theme="light"] .theme-toggle-btn {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-oui-theme="light"] .theme-toggle-btn:hover {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Logo theme switching */
+.logo-theme-switch {
+  display: inline-flex;
+  position: relative;
+  top: 3px;
+  flex-shrink: 0;
+}
+
+.logo-theme-switch .logo-dark {
+  display: block;
+}
+
+.logo-theme-switch .logo-light {
+  display: none;
+}
+
+.logo-theme-switch .logo-compact {
+  display: none;
+}
+
+[data-oui-theme="light"] .logo-theme-switch .logo-dark {
+  display: none;
+}
+
+[data-oui-theme="light"] .logo-theme-switch .logo-light {
+  display: block;
+}
+
+@media (max-width: 1333px) {
+  .logo-theme-switch .logo-full {
+    display: none !important;
+  }
+
+  .logo-theme-switch .logo-compact {
+    display: block;
+  }
+}
+
+/* Hide scrollbar on top nav */
+.oui-overflow-x-auto {
+  scrollbar-width: none;
+}
+
+.oui-overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+/* AI Sparkle button */
+.ai-sparkle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: rgba(221, 208, 25, 0.88);
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ai-sparkle-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #e1ff20;
+}
+
+[data-oui-theme="light"] .ai-sparkle-btn {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-oui-theme="light"] .ai-sparkle-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+}
