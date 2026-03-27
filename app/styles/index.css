@@ -30,11 +30,11 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  background-color: rgba(0, 228, 171, 0.18);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+  background-color: rgb(0, 228, 171);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%201200%22%3E%3Cpath%20d%3D%22M%20381.63997%2C1200%20C%20135.77919%2C1061.434%2071.049038%2C930.27865%20108.05732%2C751.14866%20135.37841%2C618.87726%20224.83888%2C511.26304%20233.417%2C379.24524%20271.63184%2C448.78945%20287.59935%2C498.9368%20291.87036%2C571.60898%20413.41348%2C422.69507%20493.73121%2C216.54632%20498.48692%2C0%20c%200%2C0%20316.57523%2C186.01008%20337.34836%2C466.98023%2027.25312%2C-57.91289%2040.97132%2C-149.89172%2013.7182%2C-209.5043%20C%20931.31098%2C317.09086%201409.8464%2C846.31428%20784.73519%2C1200%20902.263%2C971.16186%20815.05535%2C662.38827%20610.99652%2C519.78234%20624.62426%2C581.10164%20600.73114%2C809.80288%20510.45434%2C910.29655%20535.46754%2C742.38092%20486.6538%2C671.37843%20486.6538%2C671.37843%20c%200%2C0%20-16.75337%2C94.05444%20-81.7575%2C189.06609%20C%20345.53708%2C947.20639%20304.40709%2C1039.2914%20381.64021%2C1200%20z%22%2F%3E%3C%2Fsvg%3E");
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%201200%22%3E%3Cpath%20d%3D%22M%20381.63997%2C1200%20C%20135.77919%2C1061.434%2071.049038%2C930.27865%20108.05732%2C751.14866%20135.37841%2C618.87726%20224.83888%2C511.26304%20233.417%2C379.24524%20271.63184%2C448.78945%20287.59935%2C498.9368%20291.87036%2C571.60898%20413.41348%2C422.69507%20493.73121%2C216.54632%20498.48692%2C0%20c%200%2C0%20316.57523%2C186.01008%20337.34836%2C466.98023%2027.25312%2C-57.91289%2040.97132%2C-149.89172%2013.7182%2C-209.5043%20C%20931.31098%2C317.09086%201409.8464%2C846.31428%20784.73519%2C1200%20902.263%2C971.16186%20815.05535%2C662.38827%20610.99652%2C519.78234%20624.62426%2C581.10164%20600.73114%2C809.80288%20510.45434%2C910.29655%20535.46754%2C742.38092%20486.6538%2C671.37843%20486.6538%2C671.37843%20c%200%2C0%20-16.75337%2C94.05444%20-81.7575%2C189.06609%20C%20345.53708%2C947.20639%20304.40709%2C1039.2914%20381.64021%2C1200%20z%22%2F%3E%3C%2Fsvg%3E");
   mask-size: contain;
   mask-repeat: no-repeat;
 }
@@ -198,4 +198,57 @@
 [data-oui-theme="light"] .ai-sparkle-btn:hover {
   background: rgba(0, 0, 0, 0.1);
   color: rgba(0, 0, 0, 0.9);
+}
+
+/* topNavbar: replace opacity-based contrast-36 with a solid color in light mode */
+[data-oui-theme="light"] .oui-scaffold-topNavbar .oui-text-base-contrast-36 {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* RTL support - flip flex-row layouts and text/margin alignment */
+[dir="rtl"] .oui-flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .oui-flex-row-reverse {
+  flex-direction: row;
+}
+
+[dir="rtl"] .oui-text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .oui-text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .oui-ml-auto {
+  margin-left: unset;
+  margin-right: auto;
+}
+
+[dir="rtl"] .oui-mr-auto {
+  margin-right: unset;
+  margin-left: auto;
+}
+
+[dir="rtl"] .oui-justify-start {
+  justify-content: flex-end;
+}
+
+[dir="rtl"] .oui-justify-end {
+  justify-content: flex-start;
+}
+
+/* Markets page: override SDK containers that force dir="ltr" */
+[dir="rtl"] #oui-markets-home-page div[dir="ltr"] {
+  direction: rtl !important;
+}
+
+/* Keep numeric/page-size controls readable in LTR */
+[dir="rtl"] #oui-markets-home-page button[dir="ltr"],
+[dir="rtl"] #oui-markets-home-page input[dir="ltr"],
+[dir="rtl"] #oui-markets-home-page [role="combobox"][dir="ltr"] {
+  direction: ltr !important;
+  text-align: left;
 }

@@ -44,3 +44,49 @@
   background: rgb(var(--oui-color-base-3)) !important;
   color: rgb(var(--oui-color-base-foreground)) !important;
 }
+
+/* ── Light mode overrides ─────────────────────────────────── */
+[data-oui-theme="light"] .dex {
+  color: rgb(20, 24, 35) !important;
+}
+
+[data-oui-theme="light"] .dex .swap {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-oui-theme="light"] .dex .swap .block {
+  background: rgb(242, 244, 248) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-oui-theme="light"] .dex .swap input {
+  background: rgb(235, 238, 244) !important;
+  color: rgb(20, 24, 35) !important;
+}
+
+[data-oui-theme="light"] .dex .swap input::placeholder {
+  color: rgba(20, 24, 35, 0.45) !important;
+}
+
+[data-oui-theme="light"] .coin-input .input-main {
+  background: rgb(235, 238, 244) !important;
+}
+
+[data-oui-theme="light"] .el-dialog {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: rgb(20, 24, 35) !important;
+}
+
+[data-oui-theme="light"] .el-dialog * {
+  color: rgb(20, 24, 35) !important;
+}
+
+[data-oui-theme="light"] .dex * {
+  color: rgb(20, 24, 35) !important;
+}
+
+.dex .chart .data-board span.tag {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
