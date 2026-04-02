@@ -205,12 +205,13 @@
   color: rgba(0, 0, 0, 0.8);
 }
 
-/* RTL support - flip flex-row layouts and text/margin alignment */
-[dir="rtl"] .oui-flex-row {
+/* RTL support - flip text alignment and margins */
+/* Only scope flex-row reversal to the top navbar, not the trading layout */
+[dir="rtl"] .oui-scaffold-topNavbar .oui-flex-row {
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .oui-flex-row-reverse {
+[dir="rtl"] .oui-scaffold-topNavbar .oui-flex-row-reverse {
   flex-direction: row;
 }
 
@@ -230,14 +231,6 @@
 [dir="rtl"] .oui-mr-auto {
   margin-right: unset;
   margin-left: auto;
-}
-
-[dir="rtl"] .oui-justify-start {
-  justify-content: flex-end;
-}
-
-[dir="rtl"] .oui-justify-end {
-  justify-content: flex-start;
 }
 
 /* Markets page: override SDK containers that force dir="ltr" */
