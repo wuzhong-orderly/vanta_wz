@@ -157,8 +157,8 @@ const CUSTOM_LIGHT_THEME_CSS_VARS: Partial<ThemeCssVars> = {
 	"--oui-gradient-brand-angle": "17.44deg",
 	"--oui-gradient-warning-start": "180 110 10",
 	"--oui-gradient-warning-end": "255 185 51",
-	"--oui-gradient-neutral-start": "22 26 36",
-	"--oui-gradient-neutral-end": "34 40 52",
+	"--oui-gradient-neutral-start": "255 255 255",
+	"--oui-gradient-neutral-end": "255 255 255",
 
 	/* rounded */
 	"--oui-rounded-sm": "2px",
