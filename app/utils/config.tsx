@@ -508,12 +508,26 @@ export const useOrderlyConfig = () => {
           color: "rgba(255, 255, 255, 0.98)",
           profitColor: "rgba(15, 178, 118, 1)",
           lossColor: "rgba(245, 70, 75, 1)",
-          brandColor: "rgba(255, 255, 255, 0.98)",
+          brandColor: "#00e4ab",
           // ref
           refLink:
             typeof window !== "undefined" ? window.location.origin : undefined,
           refSlogan:
             getRuntimeConfig("VITE_ORDERLY_BROKER_NAME") || "Orderly Network",
+          layout: {
+            domain: {
+              textAlign: "end",
+              position: {
+                left: 532,
+              },
+            },
+            updateTime: {
+              textAlign: "end",
+              position: {
+                left: 532,
+              },
+            },
+          },
         },
       },
     };
