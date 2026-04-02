@@ -62,14 +62,6 @@ import {
   dataListMaxHeight,
 } from "./trading.script";
 
-const LazyRiskRateWidget = React.lazy(() =>
-  import("../../components/desktop/riskRate").then((mod) => {
-    return {
-      default: mod.RiskRateWidget,
-    };
-  }),
-);
-
 const LazyAssetViewWidget = React.lazy(() =>
   import("../../components/desktop/assetView").then((mod) => {
     return {
@@ -174,7 +166,13 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
 
   const [sortableItems, setSortableItems] = useLocalStorage<string[]>(
     OrderEntrySortKeys,
-    ["margin", "assets", "orderEntry"],
+    ["assets", "orderEntry"],
+  );
+
+  // Filter out stale 'margin' key from old localStorage values
+  const filteredSortableItems = useMemo(
+    () => sortableItems.filter((key) => key !== "margin"),
+    [sortableItems],
   );
 
   const dropAnimationConfig = useMemo(() => {
@@ -258,12 +256,12 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
     const { active, over } = event;
 
     if (active.id !== over?.id && over) {
-      const oldIndex = sortableItems.indexOf(active.id as string);
-      const newIndex = sortableItems.indexOf(over.id as string);
+      const oldIndex = filteredSortableItems.indexOf(active.id as string);
+      const newIndex = filteredSortableItems.indexOf(over.id as string);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         // Update sortableItems order
-        const newItems = arrayMove(sortableItems, oldIndex, newIndex);
+        const newItems = arrayMove(filteredSortableItems, oldIndex, newIndex);
         setSortableItems(newItems as string[]);
 
         // Also update positions to keep them in sync
@@ -465,14 +463,6 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
 
   const orderInteractionWidgets = useMemo(() => {
     return {
-      margin: {
-        className: "oui-trading-riskRate-container",
-        element: (
-          <React.Suspense fallback={null}>
-            <LazyRiskRateWidget />
-          </React.Suspense>
-        ),
-      },
       assets: {
         className:
           "oui-trading-assetsView-container oui-border oui-border-line-12",
@@ -524,7 +514,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
         width: mainSplitSize,
       }}
     >
-      {sortableItems.map((key: string) => {
+      {filteredSortableItems.map((key: string) => {
         return (
           <SortablePanel
             key={key}
@@ -634,7 +624,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
         modifiers={[restrictToVerticalAxis]}
       >
         <SortableContext
-          items={sortableItems}
+          items={filteredSortableItems}
           strategy={verticalListSortingStrategy}
         >
           <Box height="100%">
@@ -792,7 +782,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                       width: mainSplitSize,
                     }}
                   >
-                    {sortableItems.map((key: string) => {
+                    {filteredSortableItems.map((key: string) => {
                       return (
                         <SortablePanel
                           key={key}
@@ -867,7 +857,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext
-        items={sortableItems}
+        items={filteredSortableItems}
         strategy={verticalListSortingStrategy}
       >
         <Flex

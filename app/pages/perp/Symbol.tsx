@@ -37,8 +37,8 @@ export default function PerpSymbol() {
 
   // 登录且有余额，账户在下，否则在上
   const defaultSortItems = (isLoggedIn && hasBalance)
-    ? ["margin", "orderEntry", "assets"]   // 账户在下
-    : ["assets", "margin", "orderEntry"];   // 账户在上
+    ? ["orderEntry", "assets"]   // 账户在下
+    : ["assets", "orderEntry"];   // 账户在上
   const [sortableItems, setSortableItems] = useLocalStorage<string[]>(
     OrderEntrySortKeys,
     defaultSortItems
@@ -47,9 +47,9 @@ export default function PerpSymbol() {
   // 当登录状态或余额变化时，动态更新面板顺序
   useEffect(() => {
     if (isLoggedIn && hasBalance) {
-      setSortableItems(["margin", "orderEntry", "assets"]);
+      setSortableItems(["orderEntry", "assets"]);
     } else {
-      setSortableItems(["assets", "margin", "orderEntry"]);
+      setSortableItems(["assets", "orderEntry"]);
     }
   }, [isLoggedIn, hasBalance]);
 

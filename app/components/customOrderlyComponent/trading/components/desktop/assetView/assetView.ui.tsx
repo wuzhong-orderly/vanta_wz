@@ -24,6 +24,7 @@ import { AuthGuard } from "@orderly.network/ui-connector";
 import { LTVRiskTooltipWidget } from "@orderly.network/ui-order-entry";
 import { AssetViewState } from "./assetView.script";
 import { FaucetWidget } from "./faucet/faucet.widget";
+import { RiskRateWidget } from "../riskRate";
 
 interface StatusInfo {
   title: string;
@@ -65,7 +66,6 @@ interface AssetValueListProps {
   currentLeverage?: number;
   isConnected: boolean;
   currentLtv?: string | number;
-  riskRate?: string;
 }
 
 const calculateTextColor = (val: number): string => {
@@ -283,7 +283,6 @@ const AssetValueList: FC<AssetValueListProps> = (props) => {
     currentLeverage,
     isConnected,
     currentLtv,
-    riskRate,
   } = props;
 
   const [optionsOpen, setOptionsOpen] = useLocalStorage(
@@ -382,24 +381,6 @@ const AssetValueList: FC<AssetValueListProps> = (props) => {
           value={currentLeverage}
           unit="x"
         />
-        <Flex justify="between">
-          <Text
-            size="2xs"
-            color="neutral"
-            weight="semibold"
-          >
-            {t("trading.asset.riskRate", "Risk rate")}
-          </Text>
-          <Text
-            size="2xs"
-            className={cn(
-              "select-none",
-              visible && calculateTextColor(parseFloat(riskRate ?? "0")),
-            )}
-          >
-            {visible ? (riskRate ?? "--") : "*****"}
-          </Text>
-        </Flex>
         {showLTV && <LTVDetail visible={visible} value={currentLtv} />}
       </Box>
     </Box>
@@ -633,6 +614,8 @@ export const AssetView: FC<
                 visible={visible}
                 onToggleVisibility={toggleVisible}
               />
+
+              <RiskRateWidget />
               <AssetValueList
                 visible={visible}
                 freeCollateral={freeCollateral}
@@ -642,7 +625,6 @@ export const AssetView: FC<
                 currentLeverage={currentLeverage}
                 isConnected={isConnected}
                 currentLtv={currentLtv}
-                riskRate={riskRate}
               />
               <Flex
                 gap={isMainAccount ? (hasSubAccount ? 2 : 3) : 0}
