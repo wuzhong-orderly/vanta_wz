@@ -1,9 +1,11 @@
 import { Helmet } from "react-helmet-async";
+import { useTranslation } from "@orderly.network/i18n";
 import { generatePageTitle } from "@/utils/utils";
 import { Dashboard, ReferralProvider } from "@orderly.network/affiliate";
 import { getRuntimeConfig } from "@/utils/runtime-config";
 
 export default function RewardsAffiliate() {
+  const { t } = useTranslation();
   const brokerName = getRuntimeConfig("VITE_ORDERLY_BROKER_NAME");
   const referralLinkUrl =
     typeof window !== "undefined"
@@ -13,7 +15,7 @@ export default function RewardsAffiliate() {
   return (
     <>
       <Helmet>
-        <title>{generatePageTitle("Affiliate")}</title>
+        <title>{generatePageTitle(t("common.affiliate"))}</title>
       </Helmet>
       <ReferralProvider
         becomeAnAffiliateUrl="https://orderly.network"
