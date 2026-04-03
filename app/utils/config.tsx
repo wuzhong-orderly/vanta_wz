@@ -181,7 +181,7 @@ const getPnLBackgroundImages = (): string[] => {
 
     const customPosters: string[] = [];
     for (let i = 1; i <= customPnLCount; i++) {
-      customPosters.push(withBasePath(`/pnl/poster_bg_${i}.webp`));
+      customPosters.push(withBasePath(`/pnl/poster_bg_${i}.png`));
     }
 
     return customPosters;
