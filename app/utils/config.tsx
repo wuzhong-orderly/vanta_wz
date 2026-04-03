@@ -467,20 +467,20 @@ export const useOrderlyConfig = () => {
                     src={withBasePath("/logo-lightmode.png")}
                     alt="logo"
                     className="logo-light logo-full"
-                    style={{ height: "42px" }}
+                    style={{ height: "25px" }}
                   />
                   <img
                     src={withBasePath("/logo.webp")}
                     alt="logo"
                     className="logo-dark logo-full"
-                    style={{ height: "42px" }}
+                    style={{ height: "25px" }}
                   />
                   {getRuntimeConfigBoolean("VITE_HAS_SECONDARY_LOGO") && (
                     <img
                       src={withBasePath("/logo-secondary.webp")}
                       alt="logo"
                       className="logo-compact"
-                      style={{ height: "32px" }}
+                      style={{ height: "25px" }}
                     />
                   )}
                 </span>
