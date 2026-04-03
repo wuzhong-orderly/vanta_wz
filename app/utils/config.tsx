@@ -515,16 +515,38 @@ export const useOrderlyConfig = () => {
           refSlogan:
             getRuntimeConfig("VITE_ORDERLY_BROKER_NAME") || "Orderly Network",
           layout: {
+            message: {
+              position: {
+                top: 26,
+              },
+            },
+            position: {
+              position: {
+                top: 80,
+              },
+            },
+            unrealizedPnl: {
+              position: {
+                top: 120,
+              },
+            },
+            informations: {
+              position: {
+                top: 160,
+              },
+            },
             domain: {
               textAlign: "end",
               position: {
                 left: 532,
+                bottom: 22,
               },
             },
             updateTime: {
               textAlign: "end",
               position: {
                 left: 532,
+                bottom: 7,
               },
             },
           },
