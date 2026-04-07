@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
-import { useAccount, useCollateral, useLocalStorage } from "@orderly.network/hooks";
+import { useAccount, useLocalStorage } from "@orderly.network/hooks";
 import { useAppContext } from "@orderly.network/react-app";
 import { AccountStatusEnum, OrderEntrySortKeys } from "@orderly.network/types";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { API } from "@orderly.network/types";
 import { TradingPage } from "@/components/customOrderlyComponent/trading";
+import { useFirstTimeDeposit } from "@/components/customOrderlyComponent/trading/pages/trading/hooks/useFirstTimeDeposit";
 import { updateSymbol } from "@/utils/storage";
 import { formatSymbol, generatePageTitle } from "@/utils/utils";
 import { useOrderlyConfig } from "@/utils/config";
@@ -18,12 +19,13 @@ export default function PerpSymbol() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // 账户面板顺序逻辑（登录+余额判断）
-  const { state } = useAccount();
-  const { availableBalance } = useCollateral({ dp: 2 });
+  // 账户面板顺序逻辑（连接状态+首次充值判断）
+  const { state, isMainAccount } = useAccount();
   const { wrongNetwork, disabledConnect } = useAppContext();
-  const isLoggedIn = state.status >= AccountStatusEnum.SignedIn;
-  const hasBalance = availableBalance > 0;
+  const isConnected = state.status >= AccountStatusEnum.Connected;
+  const isFirstTimeDeposit = useFirstTimeDeposit();
+  const isSubAccount = isConnected && !isMainAccount;
+  const shouldOrderEntryFirst = isSubAccount || (isConnected && !isFirstTimeDeposit);
   const canTrade = useMemo(() => {
     return (
       !wrongNetwork &&
@@ -35,8 +37,8 @@ export default function PerpSymbol() {
     );
   }, [state.status, wrongNetwork, disabledConnect]);
 
-  // 登录且有余额，账户在下，否则在上
-  const defaultSortItems = (isLoggedIn && hasBalance)
+  // 已连接且非首次充值时，账户在下，否则在上
+  const defaultSortItems = shouldOrderEntryFirst
     ? ["orderEntry", "assets"]   // 账户在下
     : ["assets", "orderEntry"];   // 账户在上
   const [sortableItems, setSortableItems] = useLocalStorage<string[]>(
@@ -44,14 +46,14 @@ export default function PerpSymbol() {
     defaultSortItems
   );
 
-  // 当登录状态或余额变化时，动态更新面板顺序
+  // 当连接状态或首次充值状态变化时，动态更新面板顺序
   useEffect(() => {
-    if (isLoggedIn && hasBalance) {
+    if (shouldOrderEntryFirst) {
       setSortableItems(["orderEntry", "assets"]);
     } else {
       setSortableItems(["assets", "orderEntry"]);
     }
-  }, [isLoggedIn, hasBalance]);
+  }, [shouldOrderEntryFirst]);
 
   useEffect(() => {
     updateSymbol(symbol);
