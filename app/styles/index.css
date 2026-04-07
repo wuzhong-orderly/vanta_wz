@@ -96,12 +96,6 @@
   stroke: rgb(0, 228, 171);
 }
 
-/* Hide Margin column (10th) in positions table */
-#oui-desktop-positions-content th:nth-child(10),
-#oui-desktop-positions-content td:nth-child(10) {
-  display: none !important;
-}
-
 /* Theme toggle button */
 .theme-toggle-btn {
   display: flex;
