@@ -307,7 +307,7 @@ export const useOrderlyConfig = () => {
           },
           {
             name: "Telegram",
-            href: "https://google.com",
+            href: "https://t.me/vanta_exchange",
             target: "_blank",
             icon: telegramIcon,
             activeIcon: telegramIcon,
