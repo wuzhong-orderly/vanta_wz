@@ -45,6 +45,10 @@
   color: rgb(var(--oui-color-base-foreground)) !important;
 }
 
+.select-token-dialog .coin-list .search-box .left-box .left-input input {
+  background: none !important;
+}
+
 /* ── Light mode overrides ─────────────────────────────────── */
 [data-oui-theme="light"] .dex {
   color: rgb(20, 24, 35) !important;
