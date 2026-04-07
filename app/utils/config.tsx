@@ -517,22 +517,22 @@ export const useOrderlyConfig = () => {
           layout: {
             message: {
               position: {
-                top: 26,
+                top: 270,
               },
             },
             position: {
               position: {
-                top: 80,
+                top: 95,
               },
             },
             unrealizedPnl: {
               position: {
-                top: 120,
+                top: 130,
               },
             },
             informations: {
               position: {
-                top: 160,
+                top: 170,
               },
             },
             domain: {
