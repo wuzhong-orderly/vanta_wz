@@ -536,16 +536,14 @@ export const useOrderlyConfig = () => {
               },
             },
             domain: {
-              textAlign: "end",
               position: {
-                left: 532,
+                left: 20,
                 bottom: 22,
               },
             },
             updateTime: {
-              textAlign: "end",
               position: {
-                left: 532,
+                left: 20,
                 bottom: 7,
               },
             },
