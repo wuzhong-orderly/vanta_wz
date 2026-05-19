@@ -248,6 +248,11 @@
   }
 }
 
+.oui-tabs-funding-comparison-trigger,
+[data-testid="oui-testid-funding-comparison-tab"] {
+  display: none !important;
+}
+
 [dir="rtl"] #oui-markets-home-page div[dir="ltr"] {
   direction: rtl !important;
 }
