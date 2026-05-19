@@ -234,6 +234,20 @@
 }
 
 /* Markets page: override SDK containers that force dir="ltr" */
+#oui-markets-list {
+  display: none !important;
+}
+
+#oui-markets-header > div:first-child > div:first-child {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  #oui-markets-header > div:first-child {
+    display: none !important;
+  }
+}
+
 [dir="rtl"] #oui-markets-home-page div[dir="ltr"] {
   direction: rtl !important;
 }
