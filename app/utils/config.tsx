@@ -275,7 +275,7 @@ export const useOrderlyConfig = () => {
     );
 
     // Build the hardcoded nav structure:
-    // Futures | Spot | Market | Portfolio | CS Team ▼ | More ▼
+    // Futures | Spot | Portfolio | CS Team ▼ | More ▼
     const mainMenuItems: MainNavItem[] = [
       {
         name: t("common.trading"),
@@ -285,10 +285,6 @@ export const useOrderlyConfig = () => {
       {
         name: t("extend.swap"),
         href: "/swap",
-      },
-      {
-        name: t("common.markets"),
-        href: "/markets",
       },
       {
         name: t("common.portfolio"),
@@ -325,6 +321,10 @@ export const useOrderlyConfig = () => {
         name: t("extend.nav.more"),
         href: "/more",
         children: [
+          {
+            name: t("common.markets"),
+            href: "/markets",
+          },
           {
             name: t("tradingLeaderboard.leaderboard"),
             href: "/leaderboard",
