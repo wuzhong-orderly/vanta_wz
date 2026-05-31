@@ -1,0 +1,80 @@
+import type {
+  CampaignDistributionRow,
+  CampaignRegistry,
+  CurrentPointsRow,
+  LeaderboardRow
+} from "./types";
+
+export async function getRegistry() {
+  return request<CampaignRegistry>("/admin/registry");
+}
+
+export async function saveRegistry(registry: CampaignRegistry) {
+  return request<CampaignRegistry>("/admin/registry", {
+    method: "PUT",
+    body: JSON.stringify(registry)
+  });
+}
+
+export async function getCurrentPoints() {
+  return request<{ rows: CurrentPointsRow[] }>("/admin/current-points");
+}
+
+export async function saveCurrentPoints(rows: CurrentPointsRow[]) {
+  return request<{ rows: CurrentPointsRow[] }>("/admin/current-points", {
+    method: "PUT",
+    body: JSON.stringify({ rows })
+  });
+}
+
+export async function rebuildCurrentPointsFromCampaigns() {
+  return request<{ rows: CurrentPointsRow[]; stats: { campaignsRead: number; userCount: number } }>(
+    "/admin/current-points/rebuild-from-campaigns",
+    {
+      method: "POST"
+    }
+  );
+}
+
+export async function getDistribution(campaignNumber: number) {
+  return request<{ rows: CampaignDistributionRow[] }>(
+    `/admin/campaigns/${campaignNumber}/distribution`
+  );
+}
+
+export async function saveDistribution(
+  campaignNumber: number,
+  rows: CampaignDistributionRow[]
+) {
+  return request<{ rows: CampaignDistributionRow[] }>(
+    `/admin/campaigns/${campaignNumber}/distribution`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ rows })
+    }
+  );
+}
+
+export async function getLeaderboard() {
+  return request<{ items: LeaderboardRow[] }>("/api/leaderboard/total");
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+
+  if (init?.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(url, {
+    ...init,
+    headers
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}

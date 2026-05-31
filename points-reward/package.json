@@ -1,0 +1,21 @@
+{
+  "name": "points-reward",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "yarn workspace @points-reward/api dev",
+    "dev:admin": "yarn workspace @points-reward/admin-web dev",
+    "dev:all": "yarn dev:api & yarn dev:admin & wait",
+    "typecheck": "yarn workspaces run typecheck"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

@@ -70,6 +70,13 @@ export default defineConfig(() => {
     server: {
       open: true,
       host: true,
+      proxy: {
+        "/points-api": {
+          target: "http://localhost:4100",
+          changeOrigin: true,
+          rewrite: (proxyPath) => proxyPath.replace(/^\/points-api/, "/api"),
+        },
+      },
     },
     base: basePath,
     plugins: [

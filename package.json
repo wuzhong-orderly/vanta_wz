@@ -11,6 +11,8 @@
     "build": "tsx scripts/generate-manifest.ts && NODE_OPTIONS='--max-old-space-size=8192' vite build && tsx scripts/generate-manifest.ts",
     "build:spa": "tsx scripts/generate-manifest.ts && NODE_OPTIONS='--max-old-space-size=8192' tsx build.ts && tsx scripts/generate-manifest.ts",
     "dev": "tsx scripts/generate-manifest.ts && vite",
+    "dev:points": "cd points-reward && yarn dev:all",
+    "dev:full": "yarn dev & yarn dev:points & wait",
     "generate:manifest": "tsx scripts/generate-manifest.ts",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "preview": "vite preview",
