@@ -15,29 +15,29 @@ const currentPointColumns: Array<{
 }> = [
   { header: "ranking", id: "ranking" },
   { header: "address", id: "address", key: "address" },
+  { header: "total_points", id: "totalPoints", key: "totalPoints", numeric: true },
   {
-    header: "total_accumulated_point_in_past_campaign",
+    header: "current_campaign_vanta_points",
+    id: "currentPoints",
+    key: "totalAccumulatedPointInCurrentCampaign",
+    numeric: true
+  },
+  {
+    header: "current_campaign_special_points",
+    id: "currentSpecial",
+    key: "totalAccumulatedSpecialPointInCurrentCampaign",
+    numeric: true
+  },
+  {
+    header: "accumulated_settled_campaign_vanta_points",
     id: "pastPoints",
     key: "totalAccumulatedPointInPastCampaign",
     numeric: true
   },
   {
-    header: "total_accumulated_point_in_current_campaign",
-    id: "currentPoints",
-    key: "totalAccumulatedPointInCurrentCampaign",
-    numeric: true
-  },
-  { header: "total_points", id: "totalPoints", key: "totalPoints", numeric: true },
-  {
-    header: "total_accumulated_special_point_in_past_campaign",
+    header: "accumulated_settled_campaign_special_points",
     id: "pastSpecial",
     key: "totalAccumulatedSpecialPointInPastCampaign",
-    numeric: true
-  },
-  {
-    header: "total_accumulated_special_point_in_current_campaign",
-    id: "currentSpecial",
-    key: "totalAccumulatedSpecialPointInCurrentCampaign",
     numeric: true
   },
   { header: "remark", id: "remark", key: "remark" }
@@ -138,11 +138,11 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
               <tr key={`${row.address}-${index}`}>
                 <td>{ranking}</td>
                 <td>{row.address}</td>
-                <td>{row.totalAccumulatedPointInPastCampaign}</td>
-                <td>{row.totalAccumulatedPointInCurrentCampaign}</td>
                 <td>{getNumericValue(row, "totalPoints")}</td>
-                <td>{row.totalAccumulatedSpecialPointInPastCampaign}</td>
+                <td>{row.totalAccumulatedPointInCurrentCampaign}</td>
                 <td>{row.totalAccumulatedSpecialPointInCurrentCampaign}</td>
+                <td>{row.totalAccumulatedPointInPastCampaign}</td>
+                <td>{row.totalAccumulatedSpecialPointInPastCampaign}</td>
                 <td>{row.remark}</td>
               </tr>
             );
@@ -159,7 +159,9 @@ function getNumericValue(row: CurrentPointsRow, key: CurrentPointSortKey) {
   if (key === "totalPoints") {
     return (
       numberValue(row.totalAccumulatedPointInPastCampaign) +
-      numberValue(row.totalAccumulatedPointInCurrentCampaign)
+      numberValue(row.totalAccumulatedPointInCurrentCampaign) +
+      numberValue(row.totalAccumulatedSpecialPointInPastCampaign) +
+      numberValue(row.totalAccumulatedSpecialPointInCurrentCampaign)
     );
   }
 
