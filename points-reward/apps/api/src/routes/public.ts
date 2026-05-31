@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   getCurrentCampaign,
+  getLatestCampaignForDisplay,
   getTotalPointLeaderboard,
   getUserPoints
 } from "../lib/campaign-store.js";
@@ -13,6 +14,10 @@ export async function registerPublicRoutes(app: FastifyInstance) {
       campaign
     };
   });
+
+  app.get("/api/campaign/latest", async () => ({
+    campaign: await getLatestCampaignForDisplay()
+  }));
 
   app.get("/api/points/:address", async (request) => {
     const { address } = request.params as { address: string };

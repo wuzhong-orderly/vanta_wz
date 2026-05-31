@@ -24,6 +24,7 @@ type CampaignConfig = {
   startTime: string;
   endTime: string;
   distributionCsv: string;
+  status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED";
 };
 
 type UserPointsResponse = {
@@ -87,7 +88,7 @@ export default function PointsIndex() {
       setError("");
 
       const [campaignResponse, leaderboardResponse] = await Promise.all([
-        fetchJson<{ campaign: CampaignConfig }>("/points-api/campaign/current"),
+        fetchJson<{ campaign: CampaignConfig | null }>("/points-api/campaign/latest"),
         fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
       ]);
 
@@ -144,6 +145,10 @@ export default function PointsIndex() {
             </div>
             <h1>{campaign?.campaignName ?? t("points.fallbackCampaign", "Points Campaign")}</h1>
             <div className="points-campaign-meta">
+              <span className={`points-status-badge ${statusClassName(campaign?.status)}`}>
+                {t("points.latestCampaign", "Latest Campaign")}:{" "}
+                {formatCampaignStatus(campaign?.status)}
+              </span>
               <span>
                 <Trophy size={16} />
                 {t("points.currentPointPool", "Current Point Pool")}{" "}
@@ -353,4 +358,16 @@ function formatDateRange(startTime: string, endTime: string, locale = "en") {
   });
 
   return `${formatter.format(new Date(startTime))} - ${formatter.format(new Date(endTime))}`;
+}
+
+function formatCampaignStatus(status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED") {
+  return status ?? "UNKNOWN";
+}
+
+function statusClassName(status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED") {
+  if (!status) {
+    return "is-unknown";
+  }
+
+  return `is-${status.toLowerCase()}`;
 }

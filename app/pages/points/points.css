@@ -75,6 +75,39 @@
   gap: 7px;
 }
 
+.points-status-badge {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+}
+
+.points-status-badge.is-active {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: rgb(52, 211, 153);
+}
+
+.points-status-badge.is-ended {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: rgb(251, 191, 36);
+}
+
+.points-status-badge.is-settled {
+  background: rgba(96, 165, 250, 0.16);
+  border-color: rgba(96, 165, 250, 0.4);
+  color: rgb(147, 197, 253);
+}
+
+.points-status-badge.is-draft,
+.points-status-badge.is-unknown {
+  background: rgba(156, 163, 175, 0.14);
+  border-color: rgba(156, 163, 175, 0.35);
+  color: rgba(var(--oui-color-base-contrast), 0.72);
+}
+
 .points-icon-button,
 .points-primary-button {
   border: 0;

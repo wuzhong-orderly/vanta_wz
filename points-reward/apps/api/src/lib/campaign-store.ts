@@ -70,6 +70,46 @@ export async function getCurrentCampaign() {
   return campaign;
 }
 
+export async function getLatestCampaignForDisplay() {
+  const registry = await readRegistry();
+  const now = Date.now();
+
+  const eligibleCampaigns = registry.campaigns.filter((campaign) => {
+    if (
+      campaign.status !== "ACTIVE" &&
+      campaign.status !== "ENDED" &&
+      campaign.status !== "SETTLED"
+    ) {
+      return false;
+    }
+
+    const startTime = Date.parse(campaign.startTime);
+
+    if (!Number.isFinite(startTime)) {
+      return false;
+    }
+
+    return startTime <= now;
+  });
+
+  if (eligibleCampaigns.length === 0) {
+    return null;
+  }
+
+  eligibleCampaigns.sort((left, right) => {
+    const rightStartTime = Date.parse(right.startTime);
+    const leftStartTime = Date.parse(left.startTime);
+
+    if (rightStartTime !== leftStartTime) {
+      return rightStartTime - leftStartTime;
+    }
+
+    return right.campaignNumber - left.campaignNumber;
+  });
+
+  return eligibleCampaigns[0];
+}
+
 export async function getRegistry(): Promise<CampaignRegistry> {
   return readRegistry();
 }
