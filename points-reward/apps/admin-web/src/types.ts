@@ -1,3 +1,5 @@
+export type Tab = "campaigns" | "settlement" | "current" | "distribution" | "leaderboard";
+
 export interface CampaignConfig {
   campaignNumber: number;
   campaignName: string;

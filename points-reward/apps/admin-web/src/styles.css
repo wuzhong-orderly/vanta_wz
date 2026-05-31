@@ -374,6 +374,37 @@ td input {
   width: 260px;
 }
 
+.campaign-management-table .campaign-status-select {
+  border-width: 1px;
+  font-weight: 750;
+  min-width: 110px;
+  width: 110px;
+}
+
+.campaign-management-table .campaign-status-select.status-draft {
+  background: #eef2f5;
+  border-color: #cfd6df;
+  color: #435164;
+}
+
+.campaign-management-table .campaign-status-select.status-active {
+  background: #e6f4ed;
+  border-color: #9fd8b7;
+  color: #146c43;
+}
+
+.campaign-management-table .campaign-status-select.status-ended {
+  background: #fff4d6;
+  border-color: #f1c96b;
+  color: #8a5a00;
+}
+
+.campaign-management-table .campaign-status-select.status-settled {
+  background: #eaf0ff;
+  border-color: #a9bbf5;
+  color: #2f4aa0;
+}
+
 .mono {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }

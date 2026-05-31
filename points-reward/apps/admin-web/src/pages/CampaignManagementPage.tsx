@@ -1,0 +1,176 @@
+import { Plus, Save, TableProperties, Trash2 } from "lucide-react";
+import type { CampaignConfig, CampaignRegistry } from "../types";
+
+export function CampaignManagementPage({
+  registry,
+  onChange,
+  onAdd,
+  onSave
+}: {
+  registry: CampaignRegistry;
+  onChange: (registry: CampaignRegistry) => void;
+  onAdd: () => void;
+  onSave: () => void;
+}) {
+  function patchCampaign(index: number, patch: Partial<CampaignConfig>) {
+    onChange({
+      ...registry,
+      campaigns: registry.campaigns.map((campaign, campaignIndex) =>
+        campaignIndex === index ? { ...campaign, ...patch } : campaign
+      )
+    });
+  }
+
+  function removeCampaign(index: number) {
+    const nextCampaigns = registry.campaigns.filter((_, campaignIndex) => campaignIndex !== index);
+    onChange({
+      ...registry,
+      campaigns: nextCampaigns,
+      currentCampaignNumber:
+        nextCampaigns[0]?.campaignNumber ?? registry.currentCampaignNumber
+    });
+  }
+
+  return (
+    <div className="panel">
+      <div className="panel-actions">
+        <div className="panel-title">
+          <TableProperties size={18} />
+          <span>Campaign Management</span>
+          <strong>{registry.campaigns.length}</strong>
+        </div>
+        <button className="secondary-button" onClick={onAdd}>
+          <Plus size={17} />
+          Add
+        </button>
+        <button className="primary-button" onClick={onSave}>
+          <Save size={17} />
+          Save
+        </button>
+      </div>
+
+      <div className="table-wrap">
+        <table className="campaign-management-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Name</th>
+              <th>Total Vanta Points</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Orderly broker ID</th>
+              <th>Orderly stage number</th>
+              <th>Orderly stage epoch</th>
+              <th>Distribution CSV</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {registry.campaigns.map((campaign, index) => (
+              <tr key={`${campaign.campaignNumber}-${index}`}>
+                <td>
+                  <input
+                    className="campaign-no-input"
+                    value={campaign.campaignNumber}
+                    onChange={(event) =>
+                      patchCampaign(index, { campaignNumber: Number(event.target.value) })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    className="campaign-name-input"
+                    value={campaign.campaignName}
+                    onChange={(event) => patchCampaign(index, { campaignName: event.target.value })}
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.totalVantaPoints}
+                    onChange={(event) =>
+                      patchCampaign(index, { totalVantaPoints: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.startTime}
+                    onChange={(event) => patchCampaign(index, { startTime: event.target.value })}
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.endTime}
+                    onChange={(event) => patchCampaign(index, { endTime: event.target.value })}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="campaign-description-input"
+                    value={campaign.description ?? ""}
+                    onChange={(event) => patchCampaign(index, { description: event.target.value })}
+                  />
+                </td>
+                <td>
+                  <select
+                    className={`campaign-status-select status-${(campaign.status ?? "ACTIVE").toLowerCase()}`}
+                    value={campaign.status ?? "ACTIVE"}
+                    onChange={(event) =>
+                      patchCampaign(index, {
+                        status: event.target.value as CampaignConfig["status"]
+                      })
+                    }
+                  >
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="ENDED">ENDED</option>
+                    <option value="SETTLED">SETTLED</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyBrokerId ?? "vanta_exchange"}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyBrokerId: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyStageId ?? ""}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyStageId: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyEpochId ?? ""}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyEpochId: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.distributionCsv}
+                    onChange={(event) =>
+                      patchCampaign(index, { distributionCsv: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <button className="icon-button danger" onClick={() => removeCampaign(index)}>
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
