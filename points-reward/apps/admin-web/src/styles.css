@@ -564,6 +564,25 @@ td input {
   max-width: 320px;
 }
 
+.table-footer-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.checkbox-label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.checkbox-label input {
+  min-height: auto;
+  width: auto;
+}
+
 .embedded-table-wrap {
   max-height: calc(100vh - 430px);
 }

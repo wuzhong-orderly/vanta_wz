@@ -1,6 +1,7 @@
 import { Download, Flag, Plus, RefreshCw, Save, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Pagination, defaultPageSize, paginateRows } from "../components/Pagination";
+import { calculateVantaPoints, trimDecimal } from "../points";
 import type {
   CampaignConfig,
   CampaignDistributionRow,
@@ -75,6 +76,7 @@ export function SettlementPage({
   const [epochs, setEpochs] = useState<OrderlyEpoch[]>([]);
   const [metadataMessage, setMetadataMessage] = useState("");
   const [orderlyRows, setOrderlyRows] = useState<CampaignDistributionRow[]>([]);
+  const [keepCurrentAllocation, setKeepCurrentAllocation] = useState(false);
   const [orderlyQuery, setOrderlyQuery] = useState("");
   const [orderlyPage, setOrderlyPage] = useState(1);
   const [campaignDataQuery, setCampaignDataQuery] = useState("");
@@ -92,6 +94,7 @@ export function SettlementPage({
     setEpochs([]);
     setMetadataMessage("");
     setOrderlyRows([]);
+    setKeepCurrentAllocation(false);
     setOrderlyQuery("");
     setOrderlyPage(1);
     setCampaignDataQuery("");
@@ -227,11 +230,22 @@ export function SettlementPage({
       mergedRows.push(newRow);
     }
 
-    onRowsChange(recalculateAllocation(mergedRows, campaign?.totalVantaPoints));
+    onRowsChange(
+      keepCurrentAllocation
+        ? mergedRows
+        : recalculateAllocation(mergedRows, campaign?.totalVantaPoints)
+    );
   }
 
   function patchCampaignDataRow(index: number, patch: Partial<CampaignDistributionRow>) {
     onRowsChange(rows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)));
+  }
+
+  function patchCampaignDataAllocation(index: number, allocationPercentage: string) {
+    patchCampaignDataRow(index, {
+      allocationPercentage,
+      vantaPoints: calculateVantaPoints(campaign?.totalVantaPoints, allocationPercentage)
+    });
   }
 
   function addCampaignDataRow() {
@@ -510,11 +524,21 @@ export function SettlementPage({
           >
             Merge Orderly data
           </button>
-          <Pagination
-            page={orderlyPage}
-            total={filteredOrderlyRows.length}
-            onPageChange={setOrderlyPage}
-          />
+          <div className="table-footer-row">
+            <label className="checkbox-label">
+              <input
+                checked={keepCurrentAllocation}
+                type="checkbox"
+                onChange={(event) => setKeepCurrentAllocation(event.target.checked)}
+              />
+              Keep current allocation
+            </label>
+            <Pagination
+              page={orderlyPage}
+              total={filteredOrderlyRows.length}
+              onPageChange={setOrderlyPage}
+            />
+          </div>
         </div>
       </div>
 
@@ -589,7 +613,7 @@ export function SettlementPage({
                     <input
                       value={row.allocationPercentage}
                       onChange={(event) =>
-                        patchCampaignDataRow(rowIndex, { allocationPercentage: event.target.value })
+                        patchCampaignDataAllocation(rowIndex, event.target.value)
                       }
                     />
                   </td>
@@ -675,14 +699,6 @@ function recalculateAllocation(rows: CampaignDistributionRow[], totalVantaPoints
       vantaPoints: trimDecimal(vantaPoints)
     };
   });
-}
-
-function trimDecimal(value: number) {
-  if (!Number.isFinite(value)) {
-    return "0";
-  }
-
-  return String(Number(value.toFixed(8)));
 }
 
 function OrderlyInfo({

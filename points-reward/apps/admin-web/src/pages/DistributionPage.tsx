@@ -4,6 +4,7 @@ import { distributionHeaders } from "../constants";
 import { downloadCsv, stringifyCsv } from "../csv";
 import type { CampaignDistributionRow, CampaignRegistry } from "../types";
 import { EditableRowsPanel } from "../components/EditableRowsPanel";
+import { calculateVantaPoints } from "../points";
 
 export function DistributionPage({
   registry,
@@ -34,6 +35,9 @@ export function DistributionPage({
 
     return rows.filter((row) => row.address.toLowerCase().includes(normalizedQuery));
   }, [query, rows]);
+  const selectedCampaign = registry.campaigns.find(
+    (campaign) => campaign.campaignNumber === selectedCampaignNumber
+  );
 
   return (
     <EditableRowsPanel
@@ -99,6 +103,7 @@ export function DistributionPage({
           key={row.address || Math.random()}
           row={row}
           allRows={allRows}
+          totalVantaPoints={selectedCampaign?.totalVantaPoints}
           onChange={onChange}
         />
       )}
@@ -109,10 +114,12 @@ export function DistributionPage({
 function DistributionRow({
   row,
   allRows,
+  totalVantaPoints,
   onChange
 }: {
   row: CampaignDistributionRow;
   allRows: CampaignDistributionRow[];
+  totalVantaPoints?: string;
   onChange: (rows: CampaignDistributionRow[]) => void;
 }) {
   const index = allRows.indexOf(row);
@@ -125,7 +132,13 @@ function DistributionRow({
     <tr>
       <td><input value={row.address} onChange={(event) => patch({ address: event.target.value })} /></td>
       <td><input value={row.orderlyPoints} onChange={(event) => patch({ orderlyPoints: event.target.value })} /></td>
-      <td><input value={row.allocationPercentage} onChange={(event) => patch({ allocationPercentage: event.target.value })} /></td>
+      <td><input value={row.allocationPercentage} onChange={(event) => {
+        const allocationPercentage = event.target.value;
+        patch({
+          allocationPercentage,
+          vantaPoints: calculateVantaPoints(totalVantaPoints, allocationPercentage)
+        });
+      }} /></td>
       <td><input value={row.vantaPoints} onChange={(event) => patch({ vantaPoints: event.target.value })} /></td>
       <td><input value={row.specialPoints} onChange={(event) => patch({ specialPoints: event.target.value })} /></td>
       <td><input value={row.remark} onChange={(event) => patch({ remark: event.target.value })} /></td>

@@ -74,9 +74,6 @@ export function CampaignManagementPage({
               <th>End Time</th>
               <th>Description</th>
               <th>Status</th>
-              <th>Orderly broker ID</th>
-              <th>Orderly stage number</th>
-              <th>Orderly stage epoch</th>
               <th>Distribution CSV</th>
               <th></th>
             </tr>
@@ -147,30 +144,6 @@ export function CampaignManagementPage({
                     <option value="ENDED">ENDED</option>
                     <option value="SETTLED">SETTLED</option>
                   </select>
-                </td>
-                <td>
-                  <input
-                    value={campaign.orderlyBrokerId ?? "vanta_exchange"}
-                    onChange={(event) =>
-                      patchCampaign(index, { orderlyBrokerId: event.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    value={campaign.orderlyStageId ?? ""}
-                    onChange={(event) =>
-                      patchCampaign(index, { orderlyStageId: event.target.value })
-                    }
-                  />
-                </td>
-                <td>
-                  <input
-                    value={campaign.orderlyEpochId ?? ""}
-                    onChange={(event) =>
-                      patchCampaign(index, { orderlyEpochId: event.target.value })
-                    }
-                  />
                 </td>
                 <td>
                   <input
