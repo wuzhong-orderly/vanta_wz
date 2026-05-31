@@ -1,10 +1,17 @@
 export interface CampaignConfig {
   campaignNumber: number;
   campaignName: string;
+  description?: string;
   totalVantaPoints: string;
   startTime: string;
   endTime: string;
   distributionCsv: string;
+  status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED";
+  orderlyBrokerId?: string;
+  orderlyStageId?: string;
+  orderlyEpochId?: string;
+  endedAt?: string;
+  settledAt?: string;
 }
 
 export interface CampaignRegistry {
@@ -18,6 +25,7 @@ export interface CampaignDistributionRow {
   pnl: string;
   volume: string;
   orderlyPoints: string;
+  allocationPercentage: string;
   vantaPoints: string;
   specialPoints: string;
   remark: string;

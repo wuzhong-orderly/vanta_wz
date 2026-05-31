@@ -1,6 +1,7 @@
 import {
   Download,
   FileUp,
+  Flag,
   ListFilter,
   Plus,
   RefreshCw,
@@ -13,10 +14,13 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
+  endCampaign,
   getCurrentPoints,
   getDistribution,
   getLeaderboard,
   getRegistry,
+  importOrderlyRows,
+  previewAllocation,
   rebuildCurrentPointsFromCampaigns,
   saveCurrentPoints,
   saveDistribution,
@@ -24,6 +28,7 @@ import {
 } from "./api";
 import { downloadCsv, parseCsv, stringifyCsv } from "./csv";
 import type {
+  AllocationPreview,
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
@@ -31,7 +36,7 @@ import type {
   LeaderboardRow
 } from "./types";
 
-type Tab = "campaigns" | "current" | "distribution" | "leaderboard";
+type Tab = "campaigns" | "settlement" | "current" | "distribution" | "leaderboard";
 type Status = "Idle" | "Loading" | "Saved" | "Error";
 
 const currentHeaders = [
@@ -48,13 +53,15 @@ const distributionHeaders = [
   "pnl",
   "volume",
   "orderly_point",
+  "allocation_percentage",
   "vanta_points",
   "special_points",
   "remark"
 ];
 
 const tabs: Array<{ id: Tab; label: string }> = [
-  { id: "campaigns", label: "Campaigns" },
+  { id: "campaigns", label: "Campaign Management" },
+  { id: "settlement", label: "End Campaign" },
   { id: "current", label: "Current Points" },
   { id: "distribution", label: "Distribution" },
   { id: "leaderboard", label: "Leaderboard" }
@@ -69,6 +76,7 @@ export function App() {
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
   const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
+  const [allocationPreview, setAllocationPreview] = useState<AllocationPreview | null>(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -88,6 +96,7 @@ export function App() {
       ),
     [registry]
   );
+  const activeTitle = tabs.find((tab) => tab.id === activeTab)?.label ?? "Points Operations";
 
   const filteredCurrentRows = useMemo(
     () => filterRows(currentRows, query),
@@ -239,10 +248,15 @@ export function App() {
     const nextCampaign: CampaignConfig = {
       campaignNumber: nextNumber,
       campaignName: `Vanta Points Campaign ${nextNumber}`,
+      description: "",
       totalVantaPoints: "0",
       startTime: new Date().toISOString(),
       endTime: new Date().toISOString(),
-      distributionCsv: `campaign-${nextNumber}-distribution.csv`
+      distributionCsv: `campaign-${nextNumber}-distribution.csv`,
+      status: "DRAFT",
+      orderlyBrokerId: "vanta_exchange",
+      orderlyStageId: "",
+      orderlyEpochId: ""
     };
 
     setRegistry({
@@ -279,6 +293,7 @@ export function App() {
           pnl: row.pnl ?? "",
           volume: row.volume ?? "",
           orderlyPoints: row.orderly_point ?? "",
+          allocationPercentage: row.allocation_percentage ?? "",
           vantaPoints: row.vanta_points ?? "",
           specialPoints: row.special_points ?? "",
           remark: row.remark ?? ""
@@ -311,7 +326,7 @@ export function App() {
       <main className="main">
         <header className="topbar">
           <div>
-            <h1>Points Operations</h1>
+            <h1>{activeTitle}</h1>
             <p>{currentCampaign?.campaignName ?? "No current campaign"}</p>
           </div>
           <div className="toolbar">
@@ -351,6 +366,76 @@ export function App() {
               onChange={setRegistry}
               onAdd={addCampaign}
               onSave={() => void saveCampaigns()}
+            />
+          ) : null}
+
+          {activeTab === "settlement" && registry ? (
+            <SettlementPanel
+              registry={registry}
+              selectedCampaignNumber={selectedCampaignNumber}
+              rows={allocationPreview?.rows ?? distributionRows}
+              preview={allocationPreview}
+              onCampaignChange={setSelectedCampaignNumber}
+              onRowsChange={(rows) => {
+                setDistributionRows(rows);
+                setAllocationPreview(null);
+              }}
+              onPreview={async () => {
+                if (!selectedCampaignNumber) return;
+                try {
+                  setStatus("Loading");
+                  const preview = await previewAllocation(selectedCampaignNumber);
+                  setAllocationPreview(preview);
+                  setDistributionRows(preview.rows);
+                  setStatus("Idle");
+                  setMessage("Allocation preview generated");
+                } catch (error) {
+                  setStatus("Error");
+                  setMessage(getErrorMessage(error));
+                }
+              }}
+              onImportOrderly={async (options) => {
+                if (!selectedCampaignNumber) return;
+                try {
+                  setStatus("Loading");
+                  const preview = await importOrderlyRows(selectedCampaignNumber, options);
+                  setAllocationPreview(preview);
+                  setDistributionRows(preview.rows);
+                  setStatus("Idle");
+                  setMessage("Orderly rows imported");
+                } catch (error) {
+                  setStatus("Error");
+                  setMessage(getErrorMessage(error));
+                }
+              }}
+              onEndCampaign={async () => {
+                if (!selectedCampaignNumber) return;
+                const confirmed = window.confirm(
+                  "End this campaign? This writes the distribution CSV, rebuilds current-points.csv, and marks the campaign as SETTLED."
+                );
+
+                if (!confirmed) return;
+
+                try {
+                  setStatus("Loading");
+                  const result = await endCampaign(
+                    selectedCampaignNumber,
+                    allocationPreview?.rows ?? distributionRows
+                  );
+                  const nextRegistry = await getRegistry();
+                  const leaderboard = await getLeaderboard();
+                  setRegistry(nextRegistry);
+                  setAllocationPreview(result.preview);
+                  setDistributionRows(result.preview.rows);
+                  setCurrentRows(result.currentPoints.rows);
+                  setLeaderboardRows(leaderboard.items);
+                  setStatus("Saved");
+                  setMessage(`Campaign settled for ${result.preview.stats.userCount} users`);
+                } catch (error) {
+                  setStatus("Error");
+                  setMessage(getErrorMessage(error));
+                }
+              }}
             />
           ) : null}
 
@@ -420,30 +505,11 @@ function CampaignsPanel({
   return (
     <div className="panel">
       <div className="panel-actions">
-        <label>
-          Current
-          <select
-            value={registry.currentCampaignNumber}
-            onChange={(event) =>
-              onChange({ ...registry, currentCampaignNumber: Number(event.target.value) })
-            }
-          >
-            {registry.campaigns.map((campaign) => (
-              <option key={campaign.campaignNumber} value={campaign.campaignNumber}>
-                #{campaign.campaignNumber} {campaign.campaignName}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Current Points CSV
-          <input
-            value={registry.currentPointsCsv}
-            onChange={(event) =>
-              onChange({ ...registry, currentPointsCsv: event.target.value })
-            }
-          />
-        </label>
+        <div className="panel-title">
+          <TableProperties size={18} />
+          <span>Campaign Management</span>
+          <strong>{registry.campaigns.length}</strong>
+        </div>
         <button className="secondary-button" onClick={onAdd}>
           <Plus size={17} />
           Add
@@ -455,15 +521,20 @@ function CampaignsPanel({
       </div>
 
       <div className="table-wrap">
-        <table>
+        <table className="campaign-management-table">
           <thead>
             <tr>
               <th>No.</th>
               <th>Name</th>
+              <th>Description</th>
               <th>Total Vanta Points</th>
               <th>Start Time</th>
               <th>End Time</th>
               <th>Distribution CSV</th>
+              <th>Status</th>
+              <th>Orderly broker ID</th>
+              <th>Orderly stage number</th>
+              <th>Orderly stage epoch</th>
               <th></th>
             </tr>
           </thead>
@@ -472,6 +543,7 @@ function CampaignsPanel({
               <tr key={`${campaign.campaignNumber}-${index}`}>
                 <td>
                   <input
+                    className="campaign-no-input"
                     value={campaign.campaignNumber}
                     onChange={(event) =>
                       patchCampaign(index, { campaignNumber: Number(event.target.value) })
@@ -480,8 +552,16 @@ function CampaignsPanel({
                 </td>
                 <td>
                   <input
+                    className="campaign-name-input"
                     value={campaign.campaignName}
                     onChange={(event) => patchCampaign(index, { campaignName: event.target.value })}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="campaign-description-input"
+                    value={campaign.description ?? ""}
+                    onChange={(event) => patchCampaign(index, { description: event.target.value })}
                   />
                 </td>
                 <td>
@@ -509,6 +589,45 @@ function CampaignsPanel({
                     value={campaign.distributionCsv}
                     onChange={(event) =>
                       patchCampaign(index, { distributionCsv: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <select
+                    value={campaign.status ?? "ACTIVE"}
+                    onChange={(event) =>
+                      patchCampaign(index, {
+                        status: event.target.value as CampaignConfig["status"]
+                      })
+                    }
+                  >
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="ENDED">ENDED</option>
+                    <option value="SETTLED">SETTLED</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyBrokerId ?? "vanta_exchange"}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyBrokerId: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyStageId ?? ""}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyStageId: event.target.value })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    value={campaign.orderlyEpochId ?? ""}
+                    onChange={(event) =>
+                      patchCampaign(index, { orderlyEpochId: event.target.value })
                     }
                   />
                 </td>
@@ -600,6 +719,192 @@ function CurrentPointsPanel({
   );
 }
 
+function SettlementPanel({
+  registry,
+  selectedCampaignNumber,
+  rows,
+  preview,
+  onCampaignChange,
+  onRowsChange,
+  onPreview,
+  onImportOrderly,
+  onEndCampaign
+}: {
+  registry: CampaignRegistry;
+  selectedCampaignNumber: number | null;
+  rows: CampaignDistributionRow[];
+  preview: AllocationPreview | null;
+  onCampaignChange: (campaignNumber: number) => void;
+  onRowsChange: (rows: CampaignDistributionRow[]) => void;
+  onPreview: () => void;
+  onImportOrderly: (options: {
+    mode: "leaderboard" | "rankings";
+    brokerId?: string;
+    stage?: string;
+    period?: string;
+    epochId?: string;
+  }) => void;
+  onEndCampaign: () => void;
+}) {
+  const campaign = registry.campaigns.find(
+    (item) => item.campaignNumber === selectedCampaignNumber
+  );
+  const [mode, setMode] = useState<"leaderboard" | "rankings">("leaderboard");
+  const [brokerId, setBrokerId] = useState(campaign?.orderlyBrokerId ?? "");
+  const [stage, setStage] = useState(campaign?.orderlyStageId ?? "");
+  const [period, setPeriod] = useState("weekly");
+  const [epochId, setEpochId] = useState(campaign?.orderlyEpochId ?? "");
+
+  useEffect(() => {
+    setBrokerId(campaign?.orderlyBrokerId ?? "");
+    setStage(campaign?.orderlyStageId ?? "");
+    setPeriod("weekly");
+    setEpochId(campaign?.orderlyEpochId ?? "");
+  }, [campaign?.campaignNumber]);
+
+  const totalPool = numberValue(campaign?.totalVantaPoints ?? "0");
+  const totalPercentage = rows.reduce(
+    (sum, row) => sum + numberValue(row.allocationPercentage),
+    0
+  );
+
+  function patchRow(index: number, patch: Partial<CampaignDistributionRow>) {
+    onRowsChange(rows.map((row, rowIndex) => (rowIndex === index ? { ...row, ...patch } : row)));
+  }
+
+  function recalculateRow(index: number, allocationPercentage: string) {
+    const percentage = numberValue(allocationPercentage);
+    patchRow(index, {
+      allocationPercentage,
+      vantaPoints: String((totalPool * percentage) / 100)
+    });
+  }
+
+  return (
+    <div className="panel">
+      <div className="panel-actions">
+        <div className="panel-title">
+          <Flag size={18} />
+          <span>End Campaign</span>
+          <strong>{campaign?.status ?? "ACTIVE"}</strong>
+        </div>
+        <select
+          value={selectedCampaignNumber ?? ""}
+          onChange={(event) => onCampaignChange(Number(event.target.value))}
+        >
+          {registry.campaigns.map((item) => (
+            <option key={item.campaignNumber} value={item.campaignNumber}>
+              #{item.campaignNumber} {item.campaignName}
+            </option>
+          ))}
+        </select>
+        <button className="secondary-button" onClick={onPreview}>
+          <RefreshCw size={17} />
+          Preview
+        </button>
+        <button className="primary-button" onClick={onEndCampaign}>
+          <Flag size={17} />
+          End Campaign
+        </button>
+      </div>
+
+      <div className="settlement-layout">
+        <div className="settlement-card">
+          <h2>Orderly import</h2>
+          <div className="form-grid compact">
+            <label>
+              Mode
+              <select
+                value={mode}
+                onChange={(event) => setMode(event.target.value as "leaderboard" | "rankings")}
+              >
+                <option value="leaderboard">Merits leaderboard</option>
+                <option value="rankings">Stage rankings</option>
+              </select>
+            </label>
+            <label>
+              Orderly broker ID
+              <input value={brokerId} onChange={(event) => setBrokerId(event.target.value)} />
+            </label>
+            <label>
+              Orderly stage number
+              <input value={stage} onChange={(event) => setStage(event.target.value)} />
+            </label>
+            <label>
+              Period
+              <input value={period} onChange={(event) => setPeriod(event.target.value)} />
+            </label>
+            <label>
+              Orderly stage epoch
+              <input value={epochId} onChange={(event) => setEpochId(event.target.value)} />
+            </label>
+            <button
+              className="secondary-button"
+              onClick={() => onImportOrderly({ mode, brokerId, stage, period, epochId })}
+            >
+              <Download size={17} />
+              Import Orderly
+            </button>
+          </div>
+        </div>
+
+        <div className="settlement-card">
+          <h2>Allocation summary</h2>
+          <div className="settlement-metrics">
+            <Metric label="Users" value={String(preview?.stats.userCount ?? rows.length)} />
+            <Metric
+              label="Orderly Points"
+              value={formatNumber(numberValue(preview?.stats.totalOrderlyPoints ?? "0"))}
+            />
+            <Metric
+              label="Allocation %"
+              value={formatNumber(numberValue(preview?.stats.totalAllocationPercentage ?? String(totalPercentage)))}
+            />
+            <Metric
+              label="Vanta Points"
+              value={formatNumber(numberValue(preview?.stats.totalVantaPoints ?? "0"))}
+            />
+          </div>
+          {preview?.warnings.length ? (
+            <div className="warning-list">
+              {preview.warnings.map((warning) => (
+                <div key={warning}>{warning}</div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Address</th>
+              <th>Orderly Point</th>
+              <th>Allocation %</th>
+              <th>Vanta Points</th>
+              <th>Special Points</th>
+              <th>Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={`${row.address}-${index}`}>
+                <td><input value={row.address} onChange={(event) => patchRow(index, { address: event.target.value })} /></td>
+                <td><input value={row.orderlyPoints} onChange={(event) => patchRow(index, { orderlyPoints: event.target.value })} /></td>
+                <td><input value={row.allocationPercentage} onChange={(event) => recalculateRow(index, event.target.value)} /></td>
+                <td><input value={row.vantaPoints} onChange={(event) => patchRow(index, { vantaPoints: event.target.value })} /></td>
+                <td><input value={row.specialPoints} onChange={(event) => patchRow(index, { specialPoints: event.target.value })} /></td>
+                <td><input value={row.remark} onChange={(event) => patchRow(index, { remark: event.target.value })} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function CurrentPointRow({
   row,
   allRows,
@@ -673,6 +978,7 @@ function DistributionPanel({
             pnl: "0",
             volume: "0",
             orderlyPoints: "0",
+            allocationPercentage: "",
             vantaPoints: "0",
             specialPoints: "0",
             remark: ""
@@ -690,6 +996,7 @@ function DistributionPanel({
               pnl: row.pnl,
               volume: row.volume,
               orderly_point: row.orderlyPoints,
+              allocation_percentage: row.allocationPercentage,
               vanta_points: row.vantaPoints,
               special_points: row.specialPoints,
               remark: row.remark
@@ -731,6 +1038,7 @@ function DistributionRow({
       <td><input value={row.pnl} onChange={(event) => patch({ pnl: event.target.value })} /></td>
       <td><input value={row.volume} onChange={(event) => patch({ volume: event.target.value })} /></td>
       <td><input value={row.orderlyPoints} onChange={(event) => patch({ orderlyPoints: event.target.value })} /></td>
+      <td><input value={row.allocationPercentage} onChange={(event) => patch({ allocationPercentage: event.target.value })} /></td>
       <td><input value={row.vantaPoints} onChange={(event) => patch({ vantaPoints: event.target.value })} /></td>
       <td><input value={row.specialPoints} onChange={(event) => patch({ specialPoints: event.target.value })} /></td>
       <td><input value={row.remark} onChange={(event) => patch({ remark: event.target.value })} /></td>

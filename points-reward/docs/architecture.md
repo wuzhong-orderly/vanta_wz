@@ -32,10 +32,14 @@ Each campaign defines:
 
 - `campaignNumber`
 - `campaignName`
+- `description`
 - `totalVantaPoints`
 - `startTime`
 - `endTime`
 - `distributionCsv`
+- `orderlyBrokerId`
+- `orderlyStageId`
+- `orderlyEpochId`
 
 ## APIs
 
@@ -52,6 +56,15 @@ Each campaign defines:
 - `POST /admin/current-points/rebuild-from-campaigns`
 - `GET /admin/campaigns/:campaignNumber/distribution`
 - `PUT /admin/campaigns/:campaignNumber/distribution`
+- `POST /admin/campaigns/:campaignNumber/allocation-preview`
+- `POST /admin/campaigns/:campaignNumber/import-orderly`
+- `POST /admin/campaigns/:campaignNumber/end`
+
+## End Campaign Settlement
+
+Settlement imports or previews Orderly points, calculates `allocation_percentage`, derives `vanta_points` from the campaign total pool, then writes the campaign distribution CSV and rebuilds `current-points.csv`.
+
+Manual percentage overrides are allowed. `special_points` remain separate from the Vanta pool.
 
 ## Current Points Rebuild
 

@@ -1,4 +1,5 @@
 import type {
+  AllocationPreview,
   CampaignDistributionRow,
   CampaignRegistry,
   CurrentPointsRow,
@@ -34,6 +35,39 @@ export async function rebuildCurrentPointsFromCampaigns() {
       method: "POST"
     }
   );
+}
+
+export async function previewAllocation(campaignNumber: number) {
+  return request<AllocationPreview>(`/admin/campaigns/${campaignNumber}/allocation-preview`, {
+    method: "POST"
+  });
+}
+
+export async function importOrderlyRows(
+  campaignNumber: number,
+  options: {
+    mode?: "leaderboard" | "rankings";
+    stage?: string;
+    period?: string;
+    epochId?: string;
+    brokerId?: string;
+  }
+) {
+  return request<AllocationPreview>(`/admin/campaigns/${campaignNumber}/import-orderly`, {
+    method: "POST",
+    body: JSON.stringify(options)
+  });
+}
+
+export async function endCampaign(campaignNumber: number, rows: CampaignDistributionRow[]) {
+  return request<{
+    preview: AllocationPreview;
+    currentPoints: { rows: CurrentPointsRow[]; stats: { campaignsRead: number; userCount: number } };
+    campaign: CampaignRegistry["campaigns"][number];
+  }>(`/admin/campaigns/${campaignNumber}/end`, {
+    method: "POST",
+    body: JSON.stringify({ rows })
+  });
 }
 
 export async function getDistribution(campaignNumber: number) {

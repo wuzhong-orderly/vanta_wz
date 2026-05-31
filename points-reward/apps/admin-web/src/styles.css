@@ -174,6 +174,50 @@ button,
   padding: 14px;
 }
 
+.settlement-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.settlement-card {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.settlement-card h2 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.form-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settlement-metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.warning-list {
+  background: #fff4d6;
+  border: 1px solid #f6d67d;
+  border-radius: 8px;
+  color: #7a4b00;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
 .panel-actions {
   flex-wrap: wrap;
 }
@@ -311,6 +355,25 @@ td input {
   min-width: 140px;
 }
 
+.campaign-management-table {
+  min-width: 1500px;
+}
+
+.campaign-management-table .campaign-no-input {
+  min-width: 48px;
+  width: 48px;
+}
+
+.campaign-management-table .campaign-name-input {
+  min-width: 280px;
+  width: 280px;
+}
+
+.campaign-management-table .campaign-description-input {
+  min-width: 260px;
+  width: 260px;
+}
+
 .mono {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
@@ -329,8 +392,11 @@ td input {
   }
 
   .topbar,
-  .workbench-bar {
+  .workbench-bar,
+  .settlement-layout,
+  .form-grid.compact {
     align-items: stretch;
     display: grid;
+    grid-template-columns: 1fr;
   }
 }

@@ -18,10 +18,17 @@ const registrySchema = z.object({
       z.object({
         campaignNumber: z.number().int().positive(),
         campaignName: z.string().min(1),
+        description: z.string().optional(),
         totalVantaPoints: z.string().min(1),
         startTime: z.string().datetime(),
         endTime: z.string().datetime(),
-        distributionCsv: z.string().min(1)
+        distributionCsv: z.string().min(1),
+        status: z.enum(["DRAFT", "ACTIVE", "ENDED", "SETTLED"]).optional(),
+        orderlyBrokerId: z.string().optional(),
+        orderlyStageId: z.string().optional(),
+        orderlyEpochId: z.string().optional(),
+        endedAt: z.string().optional(),
+        settledAt: z.string().optional()
       })
     )
     .min(1)
@@ -43,6 +50,7 @@ const distributionHeaderMap: Record<keyof CampaignDistributionRow, string> = {
   pnl: "pnl",
   volume: "volume",
   orderlyPoints: "orderly_point",
+  allocationPercentage: "allocation_percentage",
   vantaPoints: "vanta_points",
   specialPoints: "special_points",
   remark: "remark"
@@ -183,6 +191,75 @@ export async function rebuildCurrentPointsFromCampaigns() {
   };
 }
 
+export async function previewCampaignAllocation(campaignNumber: number) {
+  const registry = await readRegistry();
+  const campaign = getCampaignByNumber(registry, campaignNumber);
+  const rows = await getCampaignDistributionRows(campaign);
+  return buildAllocationPreview(campaign, rows);
+}
+
+export async function importOrderlyCampaignRows(
+  campaignNumber: number,
+  options: {
+    mode?: "leaderboard" | "rankings";
+    stage?: string;
+    period?: string;
+    epochId?: string;
+    brokerId?: string;
+    size?: number;
+    maxPages?: number;
+  }
+) {
+  const registry = await readRegistry();
+  const campaign = getCampaignByNumber(registry, campaignNumber);
+  const rows = await fetchOrderlyRows({
+    mode: options.mode ?? "leaderboard",
+    stage: options.stage || campaign.orderlyStageId,
+    period: options.period,
+    epochId: options.epochId || campaign.orderlyEpochId,
+    brokerId: options.brokerId || campaign.orderlyBrokerId,
+    size: options.size ?? 100,
+    maxPages: options.maxPages ?? 20
+  });
+
+  return buildAllocationPreview(campaign, rows);
+}
+
+export async function endCampaign(
+  campaignNumber: number,
+  rows: CampaignDistributionRow[]
+) {
+  const registry = await readRegistry();
+  const campaign = getCampaignByNumber(registry, campaignNumber);
+  const preview = buildAllocationPreview(campaign, rows);
+  const settledAt = new Date().toISOString();
+
+  await saveCampaignDistributionRows(campaignNumber, preview.rows);
+
+  const nextRegistry: CampaignRegistry = {
+    ...registry,
+    campaigns: registry.campaigns.map((item) =>
+      item.campaignNumber === campaignNumber
+        ? {
+            ...item,
+            status: "SETTLED",
+            endedAt: item.endedAt ?? settledAt,
+            settledAt
+          }
+        : item
+    )
+  };
+
+  await saveRegistry(nextRegistry);
+  const currentPoints = await rebuildCurrentPointsFromCampaigns();
+
+  return {
+    preview,
+    currentPoints,
+    campaign: nextRegistry.campaigns.find((item) => item.campaignNumber === campaignNumber)
+  };
+}
+
 export async function getUserPoints(address: string): Promise<UserPointsResponse> {
   const normalizedAddress = normalizeAddress(address);
   const rows = await readCurrentPointsRows();
@@ -221,6 +298,7 @@ export async function getCampaignDistributionRows(
     pnl: getCsvValue(row, distributionHeaderMap.pnl),
     volume: getCsvValue(row, distributionHeaderMap.volume),
     orderlyPoints: getCsvValue(row, distributionHeaderMap.orderlyPoints),
+    allocationPercentage: getCsvValue(row, distributionHeaderMap.allocationPercentage),
     vantaPoints: getCsvValue(row, distributionHeaderMap.vantaPoints),
     specialPoints: getCsvValue(row, distributionHeaderMap.specialPoints),
     remark: getCsvValue(row, distributionHeaderMap.remark)
@@ -256,6 +334,7 @@ export async function saveCampaignDistributionRows(
       [distributionHeaderMap.pnl]: row.pnl,
       [distributionHeaderMap.volume]: row.volume,
       [distributionHeaderMap.orderlyPoints]: row.orderlyPoints,
+      [distributionHeaderMap.allocationPercentage]: row.allocationPercentage,
       [distributionHeaderMap.vantaPoints]: row.vantaPoints,
       [distributionHeaderMap.specialPoints]: row.specialPoints,
       [distributionHeaderMap.remark]: row.remark
@@ -264,6 +343,197 @@ export async function saveCampaignDistributionRows(
 
   await writeDataFile(campaign.distributionCsv, csv);
   return rows;
+}
+
+function buildAllocationPreview(campaign: CampaignConfig, rows: CampaignDistributionRow[]) {
+  const totalVantaPoints = normalizeNumber(campaign.totalVantaPoints);
+  const totalOrderlyPoints = rows.reduce(
+    (sum, row) => sum + Number(normalizeNumber(row.orderlyPoints)),
+    0
+  );
+  const warnings: string[] = [];
+  const seenAddresses = new Set<string>();
+
+  const allocatedRows = rows
+    .filter((row) => normalizeAddress(row.address))
+    .map((row) => {
+      const address = normalizeAddress(row.address);
+
+      if (seenAddresses.has(address)) {
+        warnings.push(`Duplicate address: ${row.address}`);
+      }
+
+      seenAddresses.add(address);
+
+      const orderlyPoints = Number(normalizeNumber(row.orderlyPoints));
+      const manualPercentage = Number(normalizeNumber(row.allocationPercentage));
+      const allocationPercentage =
+        manualPercentage > 0
+          ? manualPercentage
+          : totalOrderlyPoints > 0
+            ? (orderlyPoints / totalOrderlyPoints) * 100
+            : 0;
+      const vantaPoints = (Number(totalVantaPoints) * allocationPercentage) / 100;
+
+      return {
+        ...row,
+        orderlyPoints: String(orderlyPoints),
+        allocationPercentage: trimDecimal(allocationPercentage),
+        vantaPoints: trimDecimal(vantaPoints),
+        specialPoints: normalizeNumber(row.specialPoints)
+      };
+    });
+
+  const totalAllocationPercentage = allocatedRows.reduce(
+    (sum, row) => sum + Number(normalizeNumber(row.allocationPercentage)),
+    0
+  );
+  const allocatedVantaPoints = allocatedRows.reduce(
+    (sum, row) => sum + Number(normalizeNumber(row.vantaPoints)),
+    0
+  );
+  const totalSpecialPoints = allocatedRows.reduce(
+    (sum, row) => sum + Number(normalizeNumber(row.specialPoints)),
+    0
+  );
+
+  if (allocatedRows.length === 0) {
+    warnings.push("No valid addresses found.");
+  }
+
+  if (Math.abs(totalAllocationPercentage - 100) > 0.0001 && allocatedRows.length > 0) {
+    warnings.push(`Allocation percentage sums to ${trimDecimal(totalAllocationPercentage)}%.`);
+  }
+
+  return {
+    rows: allocatedRows,
+    stats: {
+      userCount: allocatedRows.length,
+      totalOrderlyPoints: trimDecimal(totalOrderlyPoints),
+      totalAllocationPercentage: trimDecimal(totalAllocationPercentage),
+      totalVantaPoints: trimDecimal(allocatedVantaPoints),
+      totalSpecialPoints: trimDecimal(totalSpecialPoints)
+    },
+    warnings
+  };
+}
+
+function getCampaignByNumber(registry: CampaignRegistry, campaignNumber: number) {
+  const campaign = registry.campaigns.find((item) => item.campaignNumber === campaignNumber);
+
+  if (!campaign) {
+    throw new Error(`Campaign ${campaignNumber} is not configured`);
+  }
+
+  return campaign;
+}
+
+async function fetchOrderlyRows(options: {
+  mode: "leaderboard" | "rankings";
+  stage?: string;
+  period?: string;
+  epochId?: string;
+  brokerId?: string;
+  size: number;
+  maxPages: number;
+}): Promise<CampaignDistributionRow[]> {
+  const baseUrl = process.env.ORDERLY_API_BASE_URL ?? "https://api.orderly.org";
+  const rows: CampaignDistributionRow[] = [];
+
+  for (let page = 1; page <= options.maxPages; page += 1) {
+    const url =
+      options.mode === "rankings"
+        ? new URL("/v1/public/points/rankings", baseUrl)
+        : new URL("/v1/public/points/leaderboard", baseUrl);
+
+    url.searchParams.set("page", String(page));
+    url.searchParams.set("size", String(options.size));
+
+    if (options.mode === "rankings") {
+      if (!options.stage || !options.period) {
+        throw new Error("Orderly rankings import requires stage and period.");
+      }
+
+      url.searchParams.set("stage", options.stage);
+      url.searchParams.set("period", options.period);
+    } else if (options.epochId) {
+      url.searchParams.set("epoch_id", options.epochId);
+    }
+
+    if (options.brokerId) {
+      url.searchParams.set("broker_id", options.brokerId);
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Orderly API request failed: ${response.status} ${await response.text()}`);
+    }
+
+    const payload = await response.json();
+    const pageRows = extractRows(payload).map(toDistributionRowFromOrderly);
+    rows.push(...pageRows);
+
+    if (pageRows.length < options.size) {
+      break;
+    }
+  }
+
+  return mergeDistributionRowsByAddress(rows);
+}
+
+function extractRows(payload: unknown): Record<string, unknown>[] {
+  const data = (payload as { data?: unknown })?.data;
+
+  if (Array.isArray(data)) {
+    return data as Record<string, unknown>[];
+  }
+
+  if (data && typeof data === "object" && Array.isArray((data as { rows?: unknown }).rows)) {
+    return (data as { rows: Record<string, unknown>[] }).rows;
+  }
+
+  return [];
+}
+
+function toDistributionRowFromOrderly(row: Record<string, unknown>): CampaignDistributionRow {
+  return {
+    address: stringValue(row.address ?? row.user_address ?? row.wallet_address),
+    pnl: stringValue(row.pnl ?? row.realized_pnl),
+    volume: stringValue(row.volume ?? row.perp_volume),
+    orderlyPoints: stringValue(
+      row.orderly_point ?? row.points ?? row.point ?? row.merits ?? row.total_points
+    ),
+    allocationPercentage: "",
+    vantaPoints: "0",
+    specialPoints: "0",
+    remark: ""
+  };
+}
+
+function mergeDistributionRowsByAddress(rows: CampaignDistributionRow[]) {
+  const rowsByAddress = new Map<string, CampaignDistributionRow>();
+
+  for (const row of rows) {
+    const address = normalizeAddress(row.address);
+
+    if (!address) {
+      continue;
+    }
+
+    const existing = rowsByAddress.get(address);
+
+    if (!existing) {
+      rowsByAddress.set(address, row);
+      continue;
+    }
+
+    existing.pnl = addDecimalStrings(existing.pnl, row.pnl);
+    existing.volume = addDecimalStrings(existing.volume, row.volume);
+    existing.orderlyPoints = addDecimalStrings(existing.orderlyPoints, row.orderlyPoints);
+  }
+
+  return Array.from(rowsByAddress.values());
 }
 
 async function readRegistry(): Promise<CampaignRegistry> {
@@ -440,6 +710,22 @@ function normalizeNumber(value: string) {
 
 function addDecimalStrings(left: string, right: string) {
   return String(Number(left) + Number(right));
+}
+
+function trimDecimal(value: number) {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+
+  return String(Number(value.toFixed(12)));
+}
+
+function stringValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value);
 }
 
 async function readDataFile(relativePath: string) {
