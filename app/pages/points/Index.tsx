@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount } from "@orderly.network/hooks";
+import { useLocaleCode, useTranslation } from "@orderly.network/i18n";
 import {
   AlertCircle,
   CalendarDays,
@@ -42,8 +43,10 @@ type LeaderboardRow = UserPointsResponse & {
 type LoadState = "idle" | "loading" | "error";
 
 export default function PointsIndex() {
+  const { t } = useTranslation();
+  const locale = useLocaleCode();
   const pageMeta = getPageMeta();
-  const pageTitle = generatePageTitle("Points");
+  const pageTitle = generatePageTitle(t("points.pageTitle", "Points"));
   const { account } = useAccount();
   const connectedAddress = account.address ?? "";
 
@@ -96,7 +99,11 @@ export default function PointsIndex() {
       setLoadState("idle");
     } catch (nextError) {
       setLoadState("error");
-      setError(nextError instanceof Error ? nextError.message : "Failed to load points");
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : t("points.errors.loadPoints", "Failed to load points")
+      );
     }
   }
 
@@ -113,7 +120,11 @@ export default function PointsIndex() {
       setLoadState("idle");
     } catch (nextError) {
       setLoadState("error");
-      setError(nextError instanceof Error ? nextError.message : "Failed to load user points");
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : t("points.errors.loadUserPoints", "Failed to load user points")
+      );
     }
   }
 
@@ -125,17 +136,20 @@ export default function PointsIndex() {
           <div>
             <div className="points-eyebrow">
               <Sparkles size={16} />
-              Vanta Genesis Points
+              {t("points.eyebrow", "Vanta Genesis Points")}
             </div>
-            <h1>{campaign?.campaignName ?? "Points Campaign"}</h1>
+            <h1>{campaign?.campaignName ?? t("points.fallbackCampaign", "Points Campaign")}</h1>
             <div className="points-campaign-meta">
               <span>
                 <Trophy size={16} />
-                Current Point Pool {formatPoints(campaign?.totalVantaPoints ?? "0")}
+                {t("points.currentPointPool", "Current Point Pool")}{" "}
+                {formatPoints(campaign?.totalVantaPoints ?? "0", locale)}
               </span>
               <span>
                 <CalendarDays size={16} />
-                {campaign ? formatDateRange(campaign.startTime, campaign.endTime) : "Loading"}
+                {campaign
+                  ? formatDateRange(campaign.startTime, campaign.endTime, locale)
+                  : t("common.loading", "Loading")}
               </span>
             </div>
           </div>
@@ -143,7 +157,7 @@ export default function PointsIndex() {
           <button
             className="points-icon-button"
             onClick={() => void loadPageData()}
-            title="Refresh points"
+            title={t("points.refresh", "Refresh points")}
           >
             <RefreshCw size={18} />
           </button>
@@ -158,34 +172,54 @@ export default function PointsIndex() {
 
         <section className="points-summary-grid">
           <PointMetric
-            label="Total Points"
+            label={t("points.totalPoints", "Total Points")}
             value={userPoints?.totalPoint ?? "0"}
-            subLabel={userRank ? `Rank #${userRank}` : "No rank yet"}
+            subLabel={
+              userRank
+                ? `${t("points.rank", "Rank")} #${userRank}`
+                : t("points.noRankYet", "No rank yet")
+            }
+            locale={locale}
           />
           <PointMetric
-            label="Current Campaign"
+            label={t("points.currentCampaign", "Current Campaign")}
             value={userPoints?.currentPoint ?? "0"}
-            subLabel="Vanta points"
+            subLabel={t("points.vantaPoints", "Vanta points")}
+            locale={locale}
           />
           <PointMetric
-            label="Past Campaigns"
+            label={t("points.pastCampaigns", "Past Campaigns")}
             value={userPoints?.totalAccumulatedPointInPastCampaign ?? "0"}
-            subLabel="Accumulated"
+            subLabel={t("points.accumulated", "Accumulated")}
+            locale={locale}
           />
           <PointMetric
-            label="Special Points"
+            label={t("points.specialPoints", "Special Points")}
             value={userPoints?.totalSpecialPoint ?? "0"}
-            subLabel={`${formatPoints(userPoints?.currentSpecialPoint ?? "0")} current`}
+            subLabel={`${formatPoints(userPoints?.currentSpecialPoint ?? "0", locale)} ${t(
+              "points.current",
+              "current"
+            )}`}
+            locale={locale}
           />
         </section>
 
         <section className="points-leaderboard">
           <div className="points-section-title">
             <div>
-              <h2>Total Points Leaderboard</h2>
-              <p>Ranked by past plus current Vanta points.</p>
+              <h2>{t("points.totalPointsLeaderboard", "Total Points Leaderboard")}</h2>
+              <p>
+                {t(
+                  "points.leaderboardDescription",
+                  "Ranked by past plus current Vanta points."
+                )}
+              </p>
             </div>
-            <span>{loadState === "loading" ? "Loading" : `${leaderboard.length} users`}</span>
+            <span>
+              {loadState === "loading"
+                ? t("common.loading", "Loading")
+                : `${leaderboard.length} ${t("points.users", "users")}`}
+            </span>
           </div>
 
           <div className="points-podium">
@@ -193,7 +227,7 @@ export default function PointsIndex() {
               <div className="points-podium-item" key={row.address}>
                 <Medal size={22} />
                 <span>#{row.rank}</span>
-                <strong>{formatPoints(row.totalPoint)}</strong>
+                <strong>{formatPoints(row.totalPoint, locale)}</strong>
                 <small>{formatAddress(row.address)}</small>
               </div>
             ))}
@@ -203,12 +237,12 @@ export default function PointsIndex() {
             <table className="points-table">
               <thead>
                 <tr>
-                  <th>Rank</th>
-                  <th>Address</th>
-                  <th>Total Points</th>
-                  <th>Current</th>
-                  <th>Special</th>
-                  <th>Remark</th>
+                  <th>{t("points.rank", "Rank")}</th>
+                  <th>{t("points.address", "Address")}</th>
+                  <th>{t("points.totalPoints", "Total Points")}</th>
+                  <th>{t("points.current", "Current")}</th>
+                  <th>{t("points.special", "Special")}</th>
+                  <th>{t("points.remark", "Remark")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,9 +258,9 @@ export default function PointsIndex() {
                   >
                     <td>#{row.rank}</td>
                     <td>{formatAddress(row.address)}</td>
-                    <td>{formatPoints(row.totalPoint)}</td>
-                    <td>{formatPoints(row.currentPoint)}</td>
-                    <td>{formatPoints(row.totalSpecialPoint)}</td>
+                    <td>{formatPoints(row.totalPoint, locale)}</td>
+                    <td>{formatPoints(row.currentPoint, locale)}</td>
+                    <td>{formatPoints(row.totalSpecialPoint, locale)}</td>
                     <td>{row.remark || "-"}</td>
                   </tr>
                 ))}
@@ -242,26 +276,19 @@ export default function PointsIndex() {
 function PointMetric({
   label,
   value,
-  subLabel
+  subLabel,
+  locale
 }: {
   label: string;
   value: string;
   subLabel: string;
+  locale: string;
 }) {
   return (
     <div className="points-metric">
       <span>{label}</span>
-      <strong>{formatPoints(value)}</strong>
+      <strong>{formatPoints(value, locale)}</strong>
       <small>{subLabel}</small>
-    </div>
-  );
-}
-
-function BreakdownItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{formatPoints(value)}</strong>
     </div>
   );
 }
@@ -276,14 +303,14 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function formatPoints(value: string) {
+function formatPoints(value: string, locale = "en") {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
     return value;
   }
 
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(locale, {
     maximumFractionDigits: 4
   }).format(number);
 }
@@ -300,8 +327,8 @@ function formatAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-function formatDateRange(startTime: string, endTime: string) {
-  const formatter = new Intl.DateTimeFormat("en-US", {
+function formatDateRange(startTime: string, endTime: string, locale = "en") {
+  const formatter = new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric"
