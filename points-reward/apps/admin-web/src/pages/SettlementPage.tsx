@@ -23,8 +23,6 @@ type SortDirection = "asc" | "desc";
 
 const campaignDataColumns: Array<{ key: CampaignDataSortKey; label: string; numeric?: boolean }> = [
   { key: "address", label: "Address" },
-  { key: "pnl", label: "PNL", numeric: true },
-  { key: "volume", label: "Volume", numeric: true },
   { key: "orderlyPoints", label: "Orderly Point", numeric: true },
   { key: "allocationPercentage", label: "Allocation %", numeric: true },
   { key: "vantaPoints", label: "Vanta Points", numeric: true },
@@ -218,8 +216,6 @@ export function SettlementPage({
 
       const newRow: CampaignDistributionRow = {
         address: orderlyRow.address,
-        pnl: "",
-        volume: "",
         orderlyPoints: orderlyRow.orderlyPoints,
         allocationPercentage: "",
         vantaPoints: "",
@@ -243,8 +239,6 @@ export function SettlementPage({
       ...rows,
       {
         address: "",
-        pnl: "",
-        volume: "",
         orderlyPoints: "0",
         allocationPercentage: "0",
         vantaPoints: "0",
@@ -580,22 +574,6 @@ export function SettlementPage({
                       value={row.address}
                       onChange={(event) =>
                         patchCampaignDataRow(rowIndex, { address: event.target.value })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={row.pnl}
-                      onChange={(event) =>
-                        patchCampaignDataRow(rowIndex, { pnl: event.target.value })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={row.volume}
-                      onChange={(event) =>
-                        patchCampaignDataRow(rowIndex, { volume: event.target.value })
                       }
                     />
                   </td>

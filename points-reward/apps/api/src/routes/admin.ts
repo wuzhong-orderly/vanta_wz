@@ -48,8 +48,6 @@ const currentPointsRowSchema = z.object({
 
 const distributionRowSchema = z.object({
   address: z.string(),
-  pnl: z.string(),
-  volume: z.string(),
   orderlyPoints: z.string(),
   allocationPercentage: z.string(),
   vantaPoints: z.string(),

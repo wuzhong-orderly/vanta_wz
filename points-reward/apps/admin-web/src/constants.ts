@@ -11,8 +11,6 @@ export const currentHeaders = [
 
 export const distributionHeaders = [
   "address",
-  "pnl",
-  "volume",
   "orderly_point",
   "allocation_percentage",
   "vanta_points",

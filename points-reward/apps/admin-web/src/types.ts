@@ -33,8 +33,6 @@ export interface CurrentPointsRow {
 
 export interface CampaignDistributionRow {
   address: string;
-  pnl: string;
-  volume: string;
   orderlyPoints: string;
   allocationPercentage: string;
   vantaPoints: string;

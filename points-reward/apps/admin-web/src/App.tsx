@@ -204,8 +204,6 @@ export function App() {
       setDistributionRows(
         parseCsv(text).map((row) => ({
           address: row.address ?? "",
-          pnl: row.pnl ?? "",
-          volume: row.volume ?? "",
           orderlyPoints: row.orderly_point ?? "",
           allocationPercentage: row.allocation_percentage ?? "",
           vantaPoints: row.vanta_points ?? "",
@@ -369,8 +367,6 @@ export function App() {
       setMessage(`Pulled ${preview.rows.length} Orderly rows`);
       return preview.rows.map((row) => ({
         address: row.address,
-        pnl: "",
-        volume: "",
         orderlyPoints: row.orderlyPoints,
         allocationPercentage: "",
         vantaPoints: "",

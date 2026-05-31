@@ -47,8 +47,6 @@ const currentPointsHeaderMap: Record<keyof CurrentPointsRow, string> = {
 
 const distributionHeaderMap: Record<keyof CampaignDistributionRow, string> = {
   address: "address",
-  pnl: "pnl",
-  volume: "volume",
   orderlyPoints: "orderly_point",
   allocationPercentage: "allocation_percentage",
   vantaPoints: "vanta_points",
@@ -356,8 +354,6 @@ export async function getCampaignDistributionRows(
 
   return parseCsv(csv).map((row) => ({
     address: getCsvValue(row, distributionHeaderMap.address),
-    pnl: getCsvValue(row, distributionHeaderMap.pnl),
-    volume: getCsvValue(row, distributionHeaderMap.volume),
     orderlyPoints: getCsvValue(row, distributionHeaderMap.orderlyPoints),
     allocationPercentage: getCsvValue(row, distributionHeaderMap.allocationPercentage),
     vantaPoints: getCsvValue(row, distributionHeaderMap.vantaPoints),
@@ -392,8 +388,6 @@ export async function saveCampaignDistributionRows(
     distributionHeaders,
     rows.map((row) => ({
       [distributionHeaderMap.address]: row.address,
-      [distributionHeaderMap.pnl]: row.pnl,
-      [distributionHeaderMap.volume]: row.volume,
       [distributionHeaderMap.orderlyPoints]: row.orderlyPoints,
       [distributionHeaderMap.allocationPercentage]: row.allocationPercentage,
       [distributionHeaderMap.vantaPoints]: row.vantaPoints,
@@ -565,8 +559,6 @@ function extractRows(payload: unknown): Record<string, unknown>[] {
 function toDistributionRowFromOrderly(row: Record<string, unknown>): CampaignDistributionRow {
   return {
     address: stringValue(row.address ?? row.user_address ?? row.wallet_address),
-    pnl: stringValue(row.pnl ?? row.realized_pnl),
-    volume: stringValue(row.volume ?? row.perp_volume),
     orderlyPoints: stringValue(
       row.orderly_point ?? row.points ?? row.point ?? row.merits ?? row.total_points
     ),
@@ -627,8 +619,6 @@ function mergeDistributionRowsByAddress(rows: CampaignDistributionRow[]) {
       continue;
     }
 
-    existing.pnl = addDecimalStrings(existing.pnl, row.pnl);
-    existing.volume = addDecimalStrings(existing.volume, row.volume);
     existing.orderlyPoints = addDecimalStrings(existing.orderlyPoints, row.orderlyPoints);
   }
 

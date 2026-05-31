@@ -68,8 +68,6 @@ export function DistributionPage({
           ...allRows,
           {
             address: "",
-            pnl: "0",
-            volume: "0",
             orderlyPoints: "0",
             allocationPercentage: "",
             vantaPoints: "0",
@@ -86,8 +84,6 @@ export function DistributionPage({
             distributionHeaders,
             allRows.map((row) => ({
               address: row.address,
-              pnl: row.pnl,
-              volume: row.volume,
               orderly_point: row.orderlyPoints,
               allocation_percentage: row.allocationPercentage,
               vanta_points: row.vantaPoints,
@@ -128,8 +124,6 @@ function DistributionRow({
   return (
     <tr>
       <td><input value={row.address} onChange={(event) => patch({ address: event.target.value })} /></td>
-      <td><input value={row.pnl} onChange={(event) => patch({ pnl: event.target.value })} /></td>
-      <td><input value={row.volume} onChange={(event) => patch({ volume: event.target.value })} /></td>
       <td><input value={row.orderlyPoints} onChange={(event) => patch({ orderlyPoints: event.target.value })} /></td>
       <td><input value={row.allocationPercentage} onChange={(event) => patch({ allocationPercentage: event.target.value })} /></td>
       <td><input value={row.vantaPoints} onChange={(event) => patch({ vantaPoints: event.target.value })} /></td>

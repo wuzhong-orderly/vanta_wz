@@ -38,7 +38,7 @@ Campaign config schema:
 Campaign distribution CSV columns:
 
 ```csv
-address,pnl,volume,orderly_point,allocation_percentage,vanta_points,special_points,remark
+address,orderly_point,allocation_percentage,vanta_points,special_points,remark
 ```
 
 Current points CSV columns:
