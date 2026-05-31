@@ -1,17 +1,31 @@
 import { Plus, Save, TableProperties, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pagination, defaultPageSize, paginateRows } from "../components/Pagination";
 import type { CampaignConfig, CampaignRegistry } from "../types";
 
 export function CampaignManagementPage({
   registry,
   onChange,
   onAdd,
-  onSave
+  onSave,
+  onStatusChange
 }: {
   registry: CampaignRegistry;
   onChange: (registry: CampaignRegistry) => void;
   onAdd: () => void;
   onSave: () => void;
+  onStatusChange: (
+    campaignNumber: number,
+    status: NonNullable<CampaignConfig["status"]>
+  ) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const pageCampaigns = paginateRows(registry.campaigns, page, defaultPageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [registry.campaigns.length]);
+
   function patchCampaign(index: number, patch: Partial<CampaignConfig>) {
     onChange({
       ...registry,
@@ -68,7 +82,10 @@ export function CampaignManagementPage({
             </tr>
           </thead>
           <tbody>
-            {registry.campaigns.map((campaign, index) => (
+            {pageCampaigns.map((campaign) => {
+              const index = registry.campaigns.indexOf(campaign);
+
+              return (
               <tr key={`${campaign.campaignNumber}-${index}`}>
                 <td>
                   <input
@@ -117,11 +134,13 @@ export function CampaignManagementPage({
                   <select
                     className={`campaign-status-select status-${(campaign.status ?? "ACTIVE").toLowerCase()}`}
                     value={campaign.status ?? "ACTIVE"}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const status = event.target.value as NonNullable<CampaignConfig["status"]>;
                       patchCampaign(index, {
-                        status: event.target.value as CampaignConfig["status"]
-                      })
-                    }
+                        status
+                      });
+                      onStatusChange(campaign.campaignNumber, status);
+                    }}
                   >
                     <option value="DRAFT">DRAFT</option>
                     <option value="ACTIVE">ACTIVE</option>
@@ -167,10 +186,12 @@ export function CampaignManagementPage({
                   </button>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
+      <Pagination page={page} total={registry.campaigns.length} onPageChange={setPage} />
     </div>
   );
 }

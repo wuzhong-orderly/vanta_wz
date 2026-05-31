@@ -4,6 +4,8 @@ import {
   endCampaign,
   getCampaignDistributionRowsByNumber,
   getCurrentPointsRows,
+  getOrderlyEpochs,
+  getOrderlyStages,
   getRegistry,
   importOrderlyCampaignRows,
   previewCampaignAllocation,
@@ -56,7 +58,7 @@ const distributionRowSchema = z.object({
 });
 
 const importOrderlySchema = z.object({
-  mode: z.enum(["leaderboard", "rankings"]).optional(),
+  mode: z.enum(["stage-ranking", "epoch-ranking", "leaderboard", "rankings"]).optional(),
   stage: z.string().optional(),
   period: z.string().optional(),
   epochId: z.string().optional(),
@@ -70,7 +72,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   app.put("/admin/registry", async (request) => {
     const registry = registrySchema.parse(request.body);
-    return saveRegistry(registry);
+    const saved = await saveRegistry(registry);
+    await rebuildCurrentPointsFromCampaigns();
+    return saved;
   });
 
   app.get("/admin/current-points", async () => ({
@@ -104,8 +108,11 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .parse(request.params);
     const { rows } = z.object({ rows: z.array(distributionRowSchema) }).parse(request.body);
 
+    const savedRows = await saveCampaignDistributionRows(campaignNumber, rows);
+    await rebuildCurrentPointsFromCampaigns();
+
     return {
-      rows: await saveCampaignDistributionRows(campaignNumber, rows)
+      rows: savedRows
     };
   });
 
@@ -125,6 +132,33 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     return importOrderlyCampaignRows(campaignNumber, body);
   });
+
+  async function handleOrderlyStages(request: { query: unknown }) {
+    const { brokerId, broker_id } = z
+      .object({
+        brokerId: z.string().optional(),
+        broker_id: z.string().optional()
+      })
+      .parse(request.query);
+    const broker = broker_id ?? brokerId;
+
+    return {
+      rows: await getOrderlyStages(z.string().min(1).parse(broker))
+    };
+  }
+
+  async function handleOrderlyEpochs(request: { query: unknown }) {
+    const { stage } = z.object({ stage: z.string().optional() }).parse(request.query);
+
+    return {
+      rows: await getOrderlyEpochs(stage)
+    };
+  }
+
+  app.get("/v1/public/points/stages", handleOrderlyStages);
+  app.get("/v1/public/points/epoch_dates", handleOrderlyEpochs);
+  app.get("/admin/orderly/stages", handleOrderlyStages);
+  app.get("/admin/orderly/epochs", handleOrderlyEpochs);
 
   app.post("/admin/campaigns/:campaignNumber/end", async (request) => {
     const { campaignNumber } = z

@@ -1,4 +1,5 @@
-import { Trash2 } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { distributionHeaders } from "../constants";
 import { downloadCsv, stringifyCsv } from "../csv";
 import type { CampaignDistributionRow, CampaignRegistry } from "../types";
@@ -23,23 +24,44 @@ export function DistributionPage({
   onImport: (file: File) => void;
   onSave: () => void;
 }) {
+  const [query, setQuery] = useState("");
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return rows;
+    }
+
+    return rows.filter((row) => row.address.toLowerCase().includes(normalizedQuery));
+  }, [query, rows]);
+
   return (
     <EditableRowsPanel
       title="Campaign Distribution"
       headers={distributionHeaders}
-      rows={rows}
+      rows={filteredRows}
       allRows={allRows}
       extraControl={
-        <select
-          value={selectedCampaignNumber ?? ""}
-          onChange={(event) => onCampaignChange(Number(event.target.value))}
-        >
-          {registry.campaigns.map((campaign) => (
-            <option key={campaign.campaignNumber} value={campaign.campaignNumber}>
-              #{campaign.campaignNumber} {campaign.campaignName}
-            </option>
-          ))}
-        </select>
+        <>
+          <select
+            value={selectedCampaignNumber ?? ""}
+            onChange={(event) => onCampaignChange(Number(event.target.value))}
+          >
+            {registry.campaigns.map((campaign) => (
+              <option key={campaign.campaignNumber} value={campaign.campaignNumber}>
+                #{campaign.campaignNumber} {campaign.campaignName}
+              </option>
+            ))}
+          </select>
+          <div className="search table-search">
+            <Search size={17} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search address"
+            />
+          </div>
+        </>
       }
       onAdd={() =>
         onChange([

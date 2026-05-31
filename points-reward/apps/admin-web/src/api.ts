@@ -3,7 +3,9 @@ import type {
   CampaignDistributionRow,
   CampaignRegistry,
   CurrentPointsRow,
-  LeaderboardRow
+  LeaderboardRow,
+  OrderlyEpoch,
+  OrderlyStage
 } from "./types";
 
 export async function getRegistry() {
@@ -46,9 +48,8 @@ export async function previewAllocation(campaignNumber: number) {
 export async function importOrderlyRows(
   campaignNumber: number,
   options: {
-    mode?: "leaderboard" | "rankings";
+    mode?: "stage-ranking" | "epoch-ranking";
     stage?: string;
-    period?: string;
     epochId?: string;
     brokerId?: string;
   }
@@ -57,6 +58,24 @@ export async function importOrderlyRows(
     method: "POST",
     body: JSON.stringify(options)
   });
+}
+
+export async function getOrderlyStages(brokerId: string) {
+  const params = new URLSearchParams({ broker_id: brokerId });
+  return request<{ rows: OrderlyStage[] }>(`/v1/public/points/stages?${params.toString()}`);
+}
+
+export async function getOrderlyEpochs(stage?: string) {
+  const params = new URLSearchParams();
+
+  if (stage) {
+    params.set("stage", stage);
+  }
+
+  const query = params.toString();
+  return request<{ rows: OrderlyEpoch[] }>(
+    `/v1/public/points/epoch_dates${query ? `?${query}` : ""}`
+  );
 }
 
 export async function endCampaign(campaignNumber: number, rows: CampaignDistributionRow[]) {

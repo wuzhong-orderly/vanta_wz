@@ -245,6 +245,11 @@ button,
   padding: 0 12px;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .primary-button {
   background: #176b87;
   color: #ffffff;
@@ -347,6 +352,22 @@ th {
   z-index: 1;
 }
 
+.table-sort-button {
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  justify-content: flex-start;
+  min-height: 24px;
+  padding: 0;
+  width: 100%;
+}
+
+.table-sort-button span {
+  color: #8b97a7;
+  margin-left: auto;
+}
+
 td {
   font-size: 13px;
 }
@@ -405,6 +426,197 @@ td input {
   color: #2f4aa0;
 }
 
+.point-management-page {
+  gap: 16px;
+}
+
+.campaign-status-strip {
+  align-items: center;
+  background: #fbfcfd;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.status-chip,
+.status-action {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.status-chip {
+  align-items: center;
+  display: inline-flex;
+}
+
+.status-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-action {
+  background: #ffffff;
+}
+
+.status-action.active {
+  box-shadow: 0 0 0 2px rgba(23, 107, 135, 0.16);
+}
+
+.status-draft {
+  background: #eef2f5;
+  border-color: #cfd6df;
+  color: #435164;
+}
+
+.status-active {
+  background: #e6f4ed;
+  border-color: #9fd8b7;
+  color: #146c43;
+}
+
+.status-ended {
+  background: #fff4d6;
+  border-color: #f1c96b;
+  color: #8a5a00;
+}
+
+.status-settled {
+  background: #eaf0ff;
+  border-color: #a9bbf5;
+  color: #2f4aa0;
+}
+
+.point-management-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(440px, 0.95fr) minmax(560px, 1.05fr);
+}
+
+.campaign-info-card {
+  width: 100%;
+}
+
+.campaign-info-grid {
+  grid-template-columns: 1.4fr 0.8fr 1fr 1fr;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.align-end {
+  align-self: end;
+}
+
+.orderly-data-card {
+  align-content: start;
+}
+
+.campaign-data-card {
+  width: 100%;
+}
+
+.table-card-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.table-card-header span {
+  color: #677384;
+  font-size: 12px;
+}
+
+.table-header-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.pagination {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.pagination span,
+.pagination strong {
+  color: #677384;
+  font-size: 12px;
+}
+
+.pagination .secondary-button {
+  min-height: 32px;
+}
+
+.table-search {
+  margin-left: auto;
+  max-width: 320px;
+}
+
+.embedded-table-wrap {
+  max-height: calc(100vh - 430px);
+}
+
+.campaign-data-card .embedded-table-wrap {
+  max-height: 420px;
+}
+
+.save-data-button {
+  justify-self: start;
+}
+
+.orderly-input-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.orderly-input-stack > button {
+  justify-self: start;
+}
+
+.orderly-meta-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.orderly-info {
+  background: #fbfcfd;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+}
+
+.orderly-info strong {
+  font-size: 12px;
+}
+
+.orderly-info span,
+.inline-message {
+  color: #677384;
+  font-size: 12px;
+}
+
+.inline-message {
+  background: #f7f9fb;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+
 .mono {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
@@ -429,5 +641,27 @@ td input {
     align-items: stretch;
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .campaign-status-strip,
+  .table-card-header {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .point-management-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .orderly-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
   }
 }

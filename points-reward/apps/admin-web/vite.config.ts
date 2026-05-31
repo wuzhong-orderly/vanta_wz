@@ -8,7 +8,8 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/api": "http://localhost:4100",
-      "/admin": "http://localhost:4100"
+      "/admin": "http://localhost:4100",
+      "/v1": "http://localhost:4100"
     }
   }
 });

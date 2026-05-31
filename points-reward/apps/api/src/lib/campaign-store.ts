@@ -118,8 +118,12 @@ export async function rebuildCurrentPointsFromCampaigns() {
 
   for (const campaign of registry.campaigns) {
     const distributionRows = await getCampaignDistributionRows(campaign);
-    const isPastCampaign = campaign.campaignNumber < registry.currentCampaignNumber;
-    const isCurrentCampaign = campaign.campaignNumber === registry.currentCampaignNumber;
+    const isPastCampaign = campaign.status
+      ? campaign.status === "SETTLED"
+      : campaign.campaignNumber < registry.currentCampaignNumber;
+    const isCurrentCampaign = campaign.status
+      ? campaign.status === "ACTIVE" || campaign.status === "ENDED"
+      : campaign.campaignNumber === registry.currentCampaignNumber;
 
     if (!isPastCampaign && !isCurrentCampaign) {
       continue;
@@ -183,8 +187,12 @@ export async function rebuildCurrentPointsFromCampaigns() {
   return {
     rows,
     stats: {
-      campaignsRead: registry.campaigns.filter(
-        (campaign) => campaign.campaignNumber <= registry.currentCampaignNumber
+      campaignsRead: registry.campaigns.filter((campaign) =>
+        campaign.status
+          ? campaign.status === "ACTIVE" ||
+            campaign.status === "ENDED" ||
+            campaign.status === "SETTLED"
+          : campaign.campaignNumber <= registry.currentCampaignNumber
       ).length,
       userCount: rows.length
     }
@@ -201,7 +209,7 @@ export async function previewCampaignAllocation(campaignNumber: number) {
 export async function importOrderlyCampaignRows(
   campaignNumber: number,
   options: {
-    mode?: "leaderboard" | "rankings";
+    mode?: "stage-ranking" | "epoch-ranking" | "leaderboard" | "rankings";
     stage?: string;
     period?: string;
     epochId?: string;
@@ -223,6 +231,59 @@ export async function importOrderlyCampaignRows(
   });
 
   return buildAllocationPreview(campaign, rows);
+}
+
+export async function getOrderlyStages(brokerId: string) {
+  if (!brokerId.trim()) {
+    return [];
+  }
+
+  const url = new URL(
+    "/v1/public/points/stages",
+    process.env.ORDERLY_API_BASE_URL ?? "https://api.orderly.org"
+  );
+  url.searchParams.set("broker_id", brokerId.trim());
+
+  const payload = await fetchOrderlyJson(url);
+  return extractRows(payload).map((row) => {
+    const id = stringValue(row.stage_id ?? row.stage ?? row.id);
+    const name = stringValue(row.stage_name ?? row.name ?? row.title);
+    const status = stringValue(row.status ?? row.stage_status);
+    const startTime = stringValue(row.start_time ?? row.start_t ?? row.start_date);
+    const endTime = stringValue(row.end_time ?? row.end_t ?? row.end_date);
+
+    return {
+      id,
+      label: name ? `${id} - ${name}` : id || "Unknown stage",
+      status,
+      startTime,
+      endTime,
+      epochs: toOrderlyEpochs(row.epoch_period),
+      raw: row
+    };
+  });
+}
+
+export async function getOrderlyEpochs(_stage?: string) {
+  const url = new URL(
+    "/v1/public/points/epoch_dates",
+    process.env.ORDERLY_API_BASE_URL ?? "https://api.orderly.org"
+  );
+
+  const payload = await fetchOrderlyJson(url);
+  return extractRows(payload).map((row) => {
+    const id = stringValue(row.epoch_id ?? row.epoch ?? row.id);
+    const startTime = stringValue(row.start_time ?? row.start_t ?? row.start_date);
+    const endTime = stringValue(row.end_time ?? row.end_t ?? row.end_date);
+
+    return {
+      id,
+      label: id ? `Epoch ${id}` : "Unknown epoch",
+      startTime,
+      endTime,
+      raw: row
+    };
+  });
 }
 
 export async function endCampaign(
@@ -429,7 +490,7 @@ function getCampaignByNumber(registry: CampaignRegistry, campaignNumber: number)
 }
 
 async function fetchOrderlyRows(options: {
-  mode: "leaderboard" | "rankings";
+  mode: "stage-ranking" | "epoch-ranking" | "leaderboard" | "rankings";
   stage?: string;
   period?: string;
   epochId?: string;
@@ -441,21 +502,22 @@ async function fetchOrderlyRows(options: {
   const rows: CampaignDistributionRow[] = [];
 
   for (let page = 1; page <= options.maxPages; page += 1) {
+    const usesStageRanking = options.mode === "stage-ranking" || options.mode === "rankings";
     const url =
-      options.mode === "rankings"
+      usesStageRanking
         ? new URL("/v1/public/points/rankings", baseUrl)
         : new URL("/v1/public/points/leaderboard", baseUrl);
 
     url.searchParams.set("page", String(page));
     url.searchParams.set("size", String(options.size));
 
-    if (options.mode === "rankings") {
-      if (!options.stage || !options.period) {
-        throw new Error("Orderly rankings import requires stage and period.");
+    if (usesStageRanking) {
+      if (!options.stage) {
+        throw new Error("Orderly stage ranking import requires stage.");
       }
 
       url.searchParams.set("stage", options.stage);
-      url.searchParams.set("period", options.period);
+      url.searchParams.set("period", options.period || "all_time");
     } else if (options.epochId) {
       url.searchParams.set("epoch_id", options.epochId);
     }
@@ -464,13 +526,7 @@ async function fetchOrderlyRows(options: {
       url.searchParams.set("broker_id", options.brokerId);
     }
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Orderly API request failed: ${response.status} ${await response.text()}`);
-    }
-
-    const payload = await response.json();
+    const payload = await fetchOrderlyJson(url);
     const pageRows = extractRows(payload).map(toDistributionRowFromOrderly);
     rows.push(...pageRows);
 
@@ -480,6 +536,16 @@ async function fetchOrderlyRows(options: {
   }
 
   return mergeDistributionRowsByAddress(rows);
+}
+
+async function fetchOrderlyJson(url: URL) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Orderly API request failed: ${response.status} ${await response.text()}`);
+  }
+
+  return response.json();
 }
 
 function extractRows(payload: unknown): Record<string, unknown>[] {
@@ -509,6 +575,39 @@ function toDistributionRowFromOrderly(row: Record<string, unknown>): CampaignDis
     specialPoints: "0",
     remark: ""
   };
+}
+
+function toOrderlyEpochs(value: unknown) {
+  const rows = Array.isArray(value) ? value : [];
+
+  return rows.map((row, index) => {
+    if (row && typeof row === "object") {
+      const epoch = row as Record<string, unknown>;
+      const id = stringValue(
+        epoch.epoch_id ?? epoch.epoch ?? epoch.id ?? epoch.period ?? epoch.name ?? index + 1
+      );
+      const startTime = stringValue(epoch.start_time ?? epoch.start_t ?? epoch.start_date);
+      const endTime = stringValue(epoch.end_time ?? epoch.end_t ?? epoch.end_date);
+
+      return {
+        id,
+        label: id ? `Epoch ${id}` : `Epoch ${index + 1}`,
+        startTime,
+        endTime,
+        raw: epoch
+      };
+    }
+
+    const id = stringValue(row);
+
+    return {
+      id,
+      label: id ? `Epoch ${id}` : `Epoch ${index + 1}`,
+      startTime: "",
+      endTime: "",
+      raw: { value: row }
+    };
+  });
 }
 
 function mergeDistributionRowsByAddress(rows: CampaignDistributionRow[]) {

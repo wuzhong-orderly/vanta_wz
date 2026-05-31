@@ -5,7 +5,7 @@
     {
       "campaignNumber": 1,
       "campaignName": "Vanta Points Campaign 1",
-      "totalVantaPoints": "1000000",
+      "totalVantaPoints": "100000",
       "startTime": "2026-05-01T00:00:00.000Z",
       "endTime": "2026-05-31T23:59:59.000Z",
       "distributionCsv": "campaign-1-distribution.csv",
@@ -34,6 +34,18 @@
       "endTime": "2026-05-28T17:13:07.044Z",
       "distributionCsv": "campaign-3-distribution.csv",
       "status": "SETTLED",
+      "orderlyBrokerId": "vanta_exchange",
+      "orderlyStageId": "",
+      "orderlyEpochId": ""
+    },
+    {
+      "campaignNumber": 4,
+      "campaignName": "Vanta Points Campaign temp",
+      "totalVantaPoints": "0",
+      "startTime": "2026-05-31T15:41:04.159Z",
+      "endTime": "2026-05-31T15:41:04.159Z",
+      "distributionCsv": "campaign-4-distribution.csv",
+      "status": "DRAFT",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
       "orderlyEpochId": ""

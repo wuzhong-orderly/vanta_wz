@@ -22,8 +22,7 @@ export const distributionHeaders = [
 
 export const tabs: Array<{ id: Tab; label: string }> = [
   { id: "campaigns", label: "Campaign Management" },
-  { id: "settlement", label: "End Campaign" },
-  { id: "current", label: "Current Points" },
-  { id: "distribution", label: "Distribution" },
-  { id: "leaderboard", label: "Leaderboard" }
+  { id: "settlement", label: "Point Management" },
+  { id: "distribution", label: "CSV Point management" },
+  { id: "current", label: "Total points ranking" }
 ];

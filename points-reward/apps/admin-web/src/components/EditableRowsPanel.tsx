@@ -1,5 +1,7 @@
 import { Download, FileUp, Plus, Save, TableProperties } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { Pagination, defaultPageSize, paginateRows } from "./Pagination";
 
 export function EditableRowsPanel<T>({
   title,
@@ -26,6 +28,14 @@ export function EditableRowsPanel<T>({
   onSave: () => void;
   renderRow: (row: T) => ReactNode;
 }) {
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [rows.length]);
+
+  const pageRows = paginateRows(rows, page, defaultPageSize);
+
   return (
     <div className="panel">
       <div className="panel-actions">
@@ -72,9 +82,10 @@ export function EditableRowsPanel<T>({
               <th></th>
             </tr>
           </thead>
-          <tbody>{rows.map(renderRow)}</tbody>
+          <tbody>{pageRows.map(renderRow)}</tbody>
         </table>
       </div>
+      <Pagination page={page} total={rows.length} onPageChange={setPage} />
     </div>
   );
 }

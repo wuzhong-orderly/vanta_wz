@@ -1,107 +1,175 @@
-import { RefreshCw, Trash2 } from "lucide-react";
-import { currentHeaders } from "../constants";
-import { downloadCsv, stringifyCsv } from "../csv";
+import { Search, TableProperties } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Pagination, defaultPageSize, paginateRows } from "../components/Pagination";
 import type { CurrentPointsRow } from "../types";
-import { EditableRowsPanel } from "../components/EditableRowsPanel";
+import { numberValue } from "../utils";
 
-export function CurrentPointsPage({
-  rows,
-  allRows,
-  onChange,
-  onImport,
-  onRebuild,
-  onSave
-}: {
-  rows: CurrentPointsRow[];
-  allRows: CurrentPointsRow[];
-  onChange: (rows: CurrentPointsRow[]) => void;
-  onImport: (file: File) => void;
-  onRebuild: () => void;
-  onSave: () => void;
-}) {
-  return (
-    <EditableRowsPanel
-      title="Current Points"
-      headers={currentHeaders}
-      rows={rows}
-      allRows={allRows}
-      onAdd={() =>
-        onChange([
-          ...allRows,
-          {
-            address: "",
-            totalAccumulatedPointInPastCampaign: "0",
-            totalAccumulatedPointInCurrentCampaign: "0",
-            totalAccumulatedSpecialPointInPastCampaign: "0",
-            totalAccumulatedSpecialPointInCurrentCampaign: "0",
-            remark: ""
-          }
-        ])
-      }
-      onImport={onImport}
-      extraAction={
-        <button className="secondary-button" onClick={onRebuild}>
-          <RefreshCw size={17} />
-          Rebuild
-        </button>
-      }
-      onExport={() =>
-        downloadCsv(
-          "current-points.csv",
-          stringifyCsv(
-            currentHeaders,
-            allRows.map((row) => ({
-              address: row.address,
-              total_accumulated_point_in_past_campaign:
-                row.totalAccumulatedPointInPastCampaign,
-              total_accumulated_point_in_current_campaign:
-                row.totalAccumulatedPointInCurrentCampaign,
-              total_accumulated_special_point_in_past_campaign:
-                row.totalAccumulatedSpecialPointInPastCampaign,
-              total_accumulated_special_point_in_current_campaign:
-                row.totalAccumulatedSpecialPointInCurrentCampaign,
-              remark: row.remark
-            }))
-          )
-        )
-      }
-      onSave={onSave}
-      renderRow={(row) => (
-        <CurrentPointRow
-          key={row.address || Math.random()}
-          row={row}
-          allRows={allRows}
-          onChange={onChange}
-        />
-      )}
-    />
-  );
-}
+type CurrentPointSortKey = keyof CurrentPointsRow | "totalPoints";
+type SortDirection = "asc" | "desc";
 
-function CurrentPointRow({
-  row,
-  allRows,
-  onChange
-}: {
-  row: CurrentPointsRow;
-  allRows: CurrentPointsRow[];
-  onChange: (rows: CurrentPointsRow[]) => void;
-}) {
-  const index = allRows.indexOf(row);
+const currentPointColumns: Array<{
+  header: string;
+  id: string;
+  key?: CurrentPointSortKey;
+  numeric?: boolean;
+}> = [
+  { header: "ranking", id: "ranking" },
+  { header: "address", id: "address", key: "address" },
+  {
+    header: "total_accumulated_point_in_past_campaign",
+    id: "pastPoints",
+    key: "totalAccumulatedPointInPastCampaign",
+    numeric: true
+  },
+  {
+    header: "total_accumulated_point_in_current_campaign",
+    id: "currentPoints",
+    key: "totalAccumulatedPointInCurrentCampaign",
+    numeric: true
+  },
+  { header: "total_points", id: "totalPoints", key: "totalPoints", numeric: true },
+  {
+    header: "total_accumulated_special_point_in_past_campaign",
+    id: "pastSpecial",
+    key: "totalAccumulatedSpecialPointInPastCampaign",
+    numeric: true
+  },
+  {
+    header: "total_accumulated_special_point_in_current_campaign",
+    id: "currentSpecial",
+    key: "totalAccumulatedSpecialPointInCurrentCampaign",
+    numeric: true
+  },
+  { header: "remark", id: "remark", key: "remark" }
+];
 
-  function patch(patchRow: Partial<CurrentPointsRow>) {
-    onChange(allRows.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patchRow } : item)));
+export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
+  const [sort, setSort] = useState<{ direction: SortDirection; key: CurrentPointSortKey }>({
+    direction: "desc",
+    key: "totalPoints"
+  });
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return rows;
+    }
+
+    return rows.filter((row) => row.address.toLowerCase().includes(normalizedQuery));
+  }, [query, rows]);
+
+  const sortedRows = useMemo(() => {
+    const column = currentPointColumns.find((item) => item.key === sort.key);
+
+    return [...filteredRows].sort((left, right) => {
+      const result = column?.numeric
+        ? getNumericValue(left, sort.key) - getNumericValue(right, sort.key)
+        : getTextValue(left, sort.key).localeCompare(getTextValue(right, sort.key), undefined, {
+            sensitivity: "base"
+          });
+
+      return sort.direction === "asc" ? result : -result;
+    });
+  }, [filteredRows, sort]);
+  const pageRows = paginateRows(sortedRows, page, defaultPageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, rows.length]);
+
+  function sortRows(key: CurrentPointSortKey) {
+    setSort((current) => ({
+      direction: current.key === key && current.direction === "desc" ? "asc" : "desc",
+      key
+    }));
   }
 
   return (
-    <tr>
-      <td><input value={row.address} onChange={(event) => patch({ address: event.target.value })} /></td>
-      <td><input value={row.totalAccumulatedPointInPastCampaign} onChange={(event) => patch({ totalAccumulatedPointInPastCampaign: event.target.value })} /></td>
-      <td><input value={row.totalAccumulatedPointInCurrentCampaign} onChange={(event) => patch({ totalAccumulatedPointInCurrentCampaign: event.target.value })} /></td>
-      <td><input value={row.totalAccumulatedSpecialPointInPastCampaign} onChange={(event) => patch({ totalAccumulatedSpecialPointInPastCampaign: event.target.value })} /></td>
-      <td><input value={row.totalAccumulatedSpecialPointInCurrentCampaign} onChange={(event) => patch({ totalAccumulatedSpecialPointInCurrentCampaign: event.target.value })} /></td>
-      <td><input value={row.remark} onChange={(event) => patch({ remark: event.target.value })} /></td>
-      <td><button className="icon-button danger" onClick={() => onChange(allRows.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={16} /></button></td>
-    </tr>
+    <div className="panel">
+      <div className="panel-actions">
+        <div className="panel-title">
+          <TableProperties size={18} />
+          <span>Total points ranking</span>
+          <strong>{rows.length}</strong>
+        </div>
+        <div className="search table-search">
+          <Search size={17} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search address"
+          />
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              {currentPointColumns.map((column) => (
+                <th key={column.id}>
+                  <button
+                    className="table-sort-button"
+                    disabled={!column.key}
+                    onClick={() => {
+                      if (column.key) {
+                        sortRows(column.key);
+                      }
+                    }}
+                  >
+                    {column.header}
+                    {column.key ? (
+                      <span>
+                        {sort.key === column.key ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}
+                      </span>
+                    ) : null}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map((row, index) => {
+              const ranking = sortedRows.indexOf(row) + 1;
+
+              return (
+              <tr key={`${row.address}-${index}`}>
+                <td>{ranking}</td>
+                <td>{row.address}</td>
+                <td>{row.totalAccumulatedPointInPastCampaign}</td>
+                <td>{row.totalAccumulatedPointInCurrentCampaign}</td>
+                <td>{getNumericValue(row, "totalPoints")}</td>
+                <td>{row.totalAccumulatedSpecialPointInPastCampaign}</td>
+                <td>{row.totalAccumulatedSpecialPointInCurrentCampaign}</td>
+                <td>{row.remark}</td>
+              </tr>
+            );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Pagination page={page} total={sortedRows.length} onPageChange={setPage} />
+    </div>
   );
+}
+
+function getNumericValue(row: CurrentPointsRow, key: CurrentPointSortKey) {
+  if (key === "totalPoints") {
+    return (
+      numberValue(row.totalAccumulatedPointInPastCampaign) +
+      numberValue(row.totalAccumulatedPointInCurrentCampaign)
+    );
+  }
+
+  return numberValue(row[key]);
+}
+
+function getTextValue(row: CurrentPointsRow, key: CurrentPointSortKey) {
+  if (key === "totalPoints") {
+    return String(getNumericValue(row, key));
+  }
+
+  return row[key];
 }

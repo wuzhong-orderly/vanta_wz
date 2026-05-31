@@ -1,4 +1,4 @@
-export type Tab = "campaigns" | "settlement" | "current" | "distribution" | "leaderboard";
+export type Tab = "campaigns" | "settlement" | "current" | "distribution";
 
 export interface CampaignConfig {
   campaignNumber: number;
@@ -52,6 +52,24 @@ export interface AllocationPreview {
     totalSpecialPoints: string;
   };
   warnings: string[];
+}
+
+export interface OrderlyStage {
+  id: string;
+  label: string;
+  status: string;
+  startTime: string;
+  endTime: string;
+  epochs: OrderlyEpoch[];
+  raw: Record<string, unknown>;
+}
+
+export interface OrderlyEpoch {
+  id: string;
+  label: string;
+  startTime: string;
+  endTime: string;
+  raw: Record<string, unknown>;
 }
 
 export interface LeaderboardRow {

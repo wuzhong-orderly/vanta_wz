@@ -1,15 +1,13 @@
-import { ListFilter, RefreshCw, Search, Trophy } from "lucide-react";
+import { RefreshCw, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   endCampaign,
   getCurrentPoints,
   getDistribution,
-  getLeaderboard,
+  getOrderlyStages,
   getRegistry,
   importOrderlyRows,
-  previewAllocation,
   rebuildCurrentPointsFromCampaigns,
-  saveCurrentPoints,
   saveDistribution,
   saveRegistry
 } from "./api";
@@ -19,18 +17,15 @@ import { parseCsv } from "./csv";
 import { CampaignManagementPage } from "./pages/CampaignManagementPage";
 import { CurrentPointsPage } from "./pages/CurrentPointsPage";
 import { DistributionPage } from "./pages/DistributionPage";
-import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { SettlementPage } from "./pages/SettlementPage";
 import type {
-  AllocationPreview,
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
   CurrentPointsRow,
-  LeaderboardRow,
   Tab
 } from "./types";
-import { filterRows, formatNumber, getErrorMessage, numberValue } from "./utils";
+import { formatNumber, getErrorMessage, numberValue } from "./utils";
 
 type Status = "Idle" | "Loading" | "Saved" | "Error";
 
@@ -41,10 +36,7 @@ export function App() {
   const [registry, setRegistry] = useState<CampaignRegistry | null>(null);
   const [currentRows, setCurrentRows] = useState<CurrentPointsRow[]>([]);
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
-  const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
-  const [allocationPreview, setAllocationPreview] = useState<AllocationPreview | null>(null);
-  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void loadAll();
@@ -64,19 +56,6 @@ export function App() {
     [registry]
   );
   const activeTitle = tabs.find((tab) => tab.id === activeTab)?.label ?? "Points Operations";
-
-  const filteredCurrentRows = useMemo(
-    () => filterRows(currentRows, query),
-    [currentRows, query]
-  );
-  const filteredDistributionRows = useMemo(
-    () => filterRows(distributionRows, query),
-    [distributionRows, query]
-  );
-  const filteredLeaderboardRows = useMemo(
-    () => filterRows(leaderboardRows, query),
-    [leaderboardRows, query]
-  );
 
   const totals = useMemo(() => {
     const currentPoint = currentRows.reduce(
@@ -106,15 +85,13 @@ export function App() {
   async function loadAll() {
     try {
       setStatus("Loading");
-      const [registryResponse, currentResponse, leaderboardResponse] = await Promise.all([
+      const [registryResponse, currentResponse] = await Promise.all([
         getRegistry(),
-        getCurrentPoints(),
-        getLeaderboard()
+        getCurrentPoints()
       ]);
 
       setRegistry(registryResponse);
       setCurrentRows(currentResponse.rows);
-      setLeaderboardRows(leaderboardResponse.items);
       setSelectedCampaignNumber(registryResponse.currentCampaignNumber);
       setMessage("Data loaded");
       setStatus("Idle");
@@ -140,24 +117,13 @@ export function App() {
     try {
       setStatus("Loading");
       const next = await saveRegistry(registry);
+      const current = await rebuildCurrentPointsFromCampaigns();
       setRegistry(next);
+      setCurrentRows(current.rows);
       setStatus("Saved");
-      setMessage("Campaign config saved");
-    } catch (error) {
-      setStatus("Error");
-      setMessage(getErrorMessage(error));
-    }
-  }
-
-  async function saveCurrentTable() {
-    try {
-      setStatus("Loading");
-      const response = await saveCurrentPoints(currentRows);
-      const leaderboard = await getLeaderboard();
-      setCurrentRows(response.rows);
-      setLeaderboardRows(leaderboard.items);
-      setStatus("Saved");
-      setMessage("Current points CSV saved");
+      setMessage(
+        `Campaign config saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+      );
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -176,9 +142,7 @@ export function App() {
     try {
       setStatus("Loading");
       const response = await rebuildCurrentPointsFromCampaigns();
-      const leaderboard = await getLeaderboard();
       setCurrentRows(response.rows);
-      setLeaderboardRows(leaderboard.items);
       setStatus("Saved");
       setMessage(
         `Rebuilt current-points.csv from ${response.stats.campaignsRead} campaign CSVs`
@@ -195,9 +159,13 @@ export function App() {
     try {
       setStatus("Loading");
       const response = await saveDistribution(selectedCampaignNumber, distributionRows);
+      const current = await rebuildCurrentPointsFromCampaigns();
       setDistributionRows(response.rows);
+      setCurrentRows(current.rows);
       setStatus("Saved");
-      setMessage("Campaign distribution CSV saved");
+      setMessage(
+        `Campaign distribution saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+      );
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -231,25 +199,6 @@ export function App() {
     setSelectedCampaignNumber(nextNumber);
   }
 
-  function importCurrentCsv(file: File) {
-    void file.text().then((text) => {
-      setCurrentRows(
-        parseCsv(text).map((row) => ({
-          address: row.address ?? "",
-          totalAccumulatedPointInPastCampaign:
-            row.total_accumulated_point_in_past_campaign ?? "",
-          totalAccumulatedPointInCurrentCampaign:
-            row.total_accumulated_point_in_current_campaign ?? "",
-          totalAccumulatedSpecialPointInPastCampaign:
-            row.total_accumulated_special_point_in_past_campaign ?? "",
-          totalAccumulatedSpecialPointInCurrentCampaign:
-            row.total_accumulated_special_point_in_current_campaign ?? "",
-          remark: row.remark ?? ""
-        }))
-      );
-    });
-  }
-
   function importDistributionCsv(file: File) {
     void file.text().then((text) => {
       setDistributionRows(
@@ -265,6 +214,47 @@ export function App() {
         }))
       );
     });
+  }
+
+  function patchSelectedCampaign(patch: Partial<CampaignConfig>) {
+    if (!registry || !selectedCampaignNumber) return;
+
+    setRegistry({
+      ...registry,
+      campaigns: registry.campaigns.map((campaign) =>
+        campaign.campaignNumber === selectedCampaignNumber
+          ? { ...campaign, ...patch }
+          : campaign
+      )
+    });
+  }
+
+  async function saveCampaignPatch(campaignNumber: number, patch: Partial<CampaignConfig>) {
+    if (!registry) return;
+
+    const nextRegistry = {
+      ...registry,
+      campaigns: registry.campaigns.map((campaign) =>
+        campaign.campaignNumber === campaignNumber
+          ? { ...campaign, ...patch }
+          : campaign
+      )
+    };
+
+    try {
+      setStatus("Loading");
+      const next = await saveRegistry(nextRegistry);
+      const current = await rebuildCurrentPointsFromCampaigns();
+      setRegistry(next);
+      setCurrentRows(current.rows);
+      setStatus("Saved");
+      setMessage(
+        `Campaign status saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+      );
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    }
   }
 
   return (
@@ -310,6 +300,9 @@ export function App() {
               onChange={setRegistry}
               onAdd={addCampaign}
               onSave={() => void saveCampaigns()}
+              onStatusChange={(campaignNumber, status) =>
+                void saveCampaignPatch(campaignNumber, { status })
+              }
             />
           ) : null}
 
@@ -317,35 +310,37 @@ export function App() {
             <SettlementPage
               registry={registry}
               selectedCampaignNumber={selectedCampaignNumber}
-              rows={allocationPreview?.rows ?? distributionRows}
-              preview={allocationPreview}
+              rows={distributionRows}
               onCampaignChange={setSelectedCampaignNumber}
-              onRowsChange={(rows) => {
-                setDistributionRows(rows);
-                setAllocationPreview(null);
+              onCampaignPatch={patchSelectedCampaign}
+              onCampaignSave={() => void saveCampaigns()}
+              onCampaignStatusChange={(status) => {
+                if (selectedCampaignNumber) {
+                  void saveCampaignPatch(selectedCampaignNumber, { status });
+                }
               }}
-              onPreview={() => void handlePreviewAllocation()}
-              onImportOrderly={(options) => void handleImportOrderly(options)}
+              onRowsChange={setDistributionRows}
+              onRefreshData={() => {
+                if (selectedCampaignNumber) {
+                  void loadDistribution(selectedCampaignNumber);
+                }
+              }}
+              onSaveData={() => void saveDistributionTable()}
+              onLoadStages={(brokerId) => getOrderlyStages(brokerId)}
+              onPullOrderly={(options) => handlePullOrderly(options)}
               onEndCampaign={() => void handleEndCampaign()}
             />
           ) : null}
 
           {activeTab === "current" ? (
-            <CurrentPointsPage
-              rows={filteredCurrentRows}
-              allRows={currentRows}
-              onChange={setCurrentRows}
-              onImport={importCurrentCsv}
-              onSave={() => void saveCurrentTable()}
-              onRebuild={() => void rebuildCurrentTableFromCampaigns()}
-            />
+            <CurrentPointsPage rows={currentRows} />
           ) : null}
 
           {activeTab === "distribution" && registry ? (
             <DistributionPage
               registry={registry}
               selectedCampaignNumber={selectedCampaignNumber}
-              rows={filteredDistributionRows}
+              rows={distributionRows}
               allRows={distributionRows}
               onCampaignChange={setSelectedCampaignNumber}
               onChange={setDistributionRows}
@@ -354,49 +349,38 @@ export function App() {
             />
           ) : null}
 
-          {activeTab === "leaderboard" ? (
-            <LeaderboardPage rows={filteredLeaderboardRows} />
-          ) : null}
         </section>
       </main>
     </div>
   );
 
-  async function handlePreviewAllocation() {
-    if (!selectedCampaignNumber) return;
-
-    try {
-      setStatus("Loading");
-      const preview = await previewAllocation(selectedCampaignNumber);
-      setAllocationPreview(preview);
-      setDistributionRows(preview.rows);
-      setStatus("Idle");
-      setMessage("Allocation preview generated");
-    } catch (error) {
-      setStatus("Error");
-      setMessage(getErrorMessage(error));
-    }
-  }
-
-  async function handleImportOrderly(options: {
-    mode: "leaderboard" | "rankings";
+  async function handlePullOrderly(options: {
+    mode: "stage-ranking" | "epoch-ranking";
     brokerId?: string;
     stage?: string;
-    period?: string;
     epochId?: string;
-  }) {
-    if (!selectedCampaignNumber) return;
+  }): Promise<CampaignDistributionRow[]> {
+    if (!selectedCampaignNumber) return [];
 
     try {
       setStatus("Loading");
       const preview = await importOrderlyRows(selectedCampaignNumber, options);
-      setAllocationPreview(preview);
-      setDistributionRows(preview.rows);
       setStatus("Idle");
-      setMessage("Orderly rows imported");
+      setMessage(`Pulled ${preview.rows.length} Orderly rows`);
+      return preview.rows.map((row) => ({
+        address: row.address,
+        pnl: "",
+        volume: "",
+        orderlyPoints: row.orderlyPoints,
+        allocationPercentage: "",
+        vantaPoints: "",
+        specialPoints: "",
+        remark: ""
+      }));
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+      return [];
     }
   }
 
@@ -412,15 +396,12 @@ export function App() {
       setStatus("Loading");
       const result = await endCampaign(
         selectedCampaignNumber,
-        allocationPreview?.rows ?? distributionRows
+        distributionRows
       );
       const nextRegistry = await getRegistry();
-      const leaderboard = await getLeaderboard();
       setRegistry(nextRegistry);
-      setAllocationPreview(result.preview);
       setDistributionRows(result.preview.rows);
       setCurrentRows(result.currentPoints.rows);
-      setLeaderboardRows(leaderboard.items);
       setStatus("Saved");
       setMessage(`Campaign settled for ${result.preview.stats.userCount} users`);
     } catch (error) {
