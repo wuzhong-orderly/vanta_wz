@@ -8,6 +8,16 @@ import type {
   OrderlyStage
 } from "./types";
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+
+function resolveRequestUrl(url: string) {
+  if (!API_BASE_URL) {
+    return url;
+  }
+
+  return `${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
 export async function getRegistry() {
   return request<CampaignRegistry>("/admin/registry");
 }
@@ -119,7 +129,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(url, {
+  const response = await fetch(resolveRequestUrl(url), {
     ...init,
     headers
   });

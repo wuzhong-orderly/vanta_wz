@@ -10,6 +10,7 @@
     "dev:api": "yarn workspace @points-reward/api dev",
     "dev:admin": "yarn workspace @points-reward/admin-web dev",
     "dev:all": "yarn dev:api & yarn dev:admin & wait",
+    "start:api": "yarn workspace @points-reward/api start",
     "typecheck": "yarn workspaces run typecheck"
   },
   "engines": {
