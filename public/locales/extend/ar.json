@@ -3,5 +3,6 @@
   "markets.rwaCategory.indices": "المؤشرات",
   "markets.rwaCategory.commodities": "السلع",
   "markets.rwaCategory.others": "اخرى",
-  "common.rwa": "TradFi"
+  "common.rwa": "TradFi",
+  "extend.nav.csTeam": "الدعم"
 }
