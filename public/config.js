@@ -33,7 +33,7 @@ window.__RUNTIME_CONFIG__ = {
   "VITE_SEO_TWITTER_HANDLE": "@Vanta_exchange",
   "VITE_SEO_THEME_COLOR": "#00E4AB",
   "VITE_SEO_KEYWORDS": "dex, Perp, Vanta, Web3, Crypto",
-  "VITE_AVAILABLE_LANGUAGES": "en,zh,tc,ja,es,ko,vi,de,fr,ru,id,tr,it,pt,uk,pl,nl,fa",
+  "VITE_AVAILABLE_LANGUAGES": "en,zh,tc,ja,es,ko,vi,de,fr,ru,id,tr,it,pt,uk,pl,nl,fa,ar,he",
   "VITE_USE_CUSTOM_PNL_POSTERS": "true",
   "VITE_CUSTOM_PNL_POSTER_COUNT": "3",
   "VITE_TRADING_VIEW_COLOR_CONFIG": "{\"upColor\":\"#0FB276\",\"downColor\":\"#F5464B\",\"pnlUpColor\":\"#0FB276\",\"pnlDownColor\":\"#F5464B\"}",
