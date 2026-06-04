@@ -40,6 +40,6 @@ window.__RUNTIME_CONFIG__ = {
   "VITE_ANALYTICS_SCRIPT": "",
   "VITE_POINTS_API_BASE_URL": "http://localhost:4100",
   "VITE_SYMBOL_LIST": "",
-  "VITE_RESTRICTED_REGIONS": "",
+  "VITE_RESTRICTED_REGIONS": "China, United States",
   "VITE_WHITELISTED_IPS": ""
 };
