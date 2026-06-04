@@ -32,5 +32,10 @@
   "points.address": "Dirección",
   "points.remark": "Nota",
   "points.errors.loadPoints": "No se pudieron cargar los puntos",
-  "points.errors.loadUserPoints": "No se pudieron cargar los puntos del usuario"
+  "points.errors.loadUserPoints": "No se pudieron cargar los puntos del usuario",
+  "markets.rwaCategory.stocks": "Acciones",
+  "markets.rwaCategory.indices": "Indices",
+  "markets.rwaCategory.commodities": "Materias primas",
+  "markets.rwaCategory.others": "Otros",
+  "common.rwa": "TradFi"
 }

@@ -32,5 +32,10 @@
   "points.address": "آدرس",
   "points.remark": "یادداشت",
   "points.errors.loadPoints": "بارگذاری امتیازها ناموفق بود",
-  "points.errors.loadUserPoints": "بارگذاری امتیازهای کاربر ناموفق بود"
+  "points.errors.loadUserPoints": "بارگذاری امتیازهای کاربر ناموفق بود",
+  "markets.rwaCategory.stocks": "سهام",
+  "markets.rwaCategory.indices": "شاخص ها",
+  "markets.rwaCategory.commodities": "کالاها",
+  "markets.rwaCategory.others": "سایر",
+  "common.rwa": "TradFi"
 }

@@ -23,5 +23,10 @@
   "points.address": "地址",
   "points.remark": "備註",
   "points.errors.loadPoints": "積分載入失敗",
-  "points.errors.loadUserPoints": "用戶積分載入失敗"
+  "points.errors.loadUserPoints": "用戶積分載入失敗",
+  "markets.rwaCategory.stocks": "股票",
+  "markets.rwaCategory.indices": "指數",
+  "markets.rwaCategory.commodities": "大宗商品",
+  "markets.rwaCategory.others": "其他",
+  "common.rwa": "传统金融"
 }

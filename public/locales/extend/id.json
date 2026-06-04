@@ -32,5 +32,10 @@
   "points.address": "Alamat",
   "points.remark": "Catatan",
   "points.errors.loadPoints": "Gagal memuat poin",
-  "points.errors.loadUserPoints": "Gagal memuat poin pengguna"
+  "points.errors.loadUserPoints": "Gagal memuat poin pengguna",
+  "markets.rwaCategory.stocks": "Saham",
+  "markets.rwaCategory.indices": "Indeks",
+  "markets.rwaCategory.commodities": "Komoditas",
+  "markets.rwaCategory.others": "Lainnya",
+  "common.rwa": "TradFi"
 }

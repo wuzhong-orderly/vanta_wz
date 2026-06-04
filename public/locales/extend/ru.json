@@ -32,5 +32,10 @@
   "points.address": "Адрес",
   "points.remark": "Примечание",
   "points.errors.loadPoints": "Не удалось загрузить баллы",
-  "points.errors.loadUserPoints": "Не удалось загрузить баллы пользователя"
+  "points.errors.loadUserPoints": "Не удалось загрузить баллы пользователя",
+  "markets.rwaCategory.stocks": "Акции",
+  "markets.rwaCategory.indices": "Индексы",
+  "markets.rwaCategory.commodities": "Сырьевые товары",
+  "markets.rwaCategory.others": "Прочее",
+  "common.rwa": "TradFi"
 }

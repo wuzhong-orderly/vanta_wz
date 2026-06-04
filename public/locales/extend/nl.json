@@ -32,5 +32,10 @@
   "points.address": "Adres",
   "points.remark": "Opmerking",
   "points.errors.loadPoints": "Punten laden mislukt",
-  "points.errors.loadUserPoints": "Gebruikerspunten laden mislukt"
+  "points.errors.loadUserPoints": "Gebruikerspunten laden mislukt",
+  "markets.rwaCategory.stocks": "Aandelen",
+  "markets.rwaCategory.indices": "Indices",
+  "markets.rwaCategory.commodities": "Grondstoffen",
+  "markets.rwaCategory.others": "Overige",
+  "common.rwa": "TradFi"
 }

@@ -32,5 +32,10 @@
   "points.address": "Address",
   "points.remark": "Remark",
   "points.errors.loadPoints": "Failed to load points",
-  "points.errors.loadUserPoints": "Failed to load user points"
+  "points.errors.loadUserPoints": "Failed to load user points",
+  "markets.rwaCategory.stocks": "Stocks",
+  "markets.rwaCategory.indices": "Indices",
+  "markets.rwaCategory.commodities": "Commodities",
+  "markets.rwaCategory.others": "Others",
+  "common.rwa": "TradFi"
 }

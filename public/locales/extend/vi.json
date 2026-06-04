@@ -32,5 +32,10 @@
   "points.address": "Địa chỉ",
   "points.remark": "Ghi chú",
   "points.errors.loadPoints": "Không thể tải điểm",
-  "points.errors.loadUserPoints": "Không thể tải điểm người dùng"
+  "points.errors.loadUserPoints": "Không thể tải điểm người dùng",
+  "markets.rwaCategory.stocks": "Co phieu",
+  "markets.rwaCategory.indices": "Chi so",
+  "markets.rwaCategory.commodities": "Hang hoa",
+  "markets.rwaCategory.others": "Khac",
+  "common.rwa": "TradFi"
 }

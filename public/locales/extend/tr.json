@@ -32,5 +32,10 @@
   "points.address": "Adres",
   "points.remark": "Not",
   "points.errors.loadPoints": "Puanlar yüklenemedi",
-  "points.errors.loadUserPoints": "Kullanıcı puanları yüklenemedi"
+  "points.errors.loadUserPoints": "Kullanıcı puanları yüklenemedi",
+  "markets.rwaCategory.stocks": "Hisseler",
+  "markets.rwaCategory.indices": "Endeksler",
+  "markets.rwaCategory.commodities": "Emtialar",
+  "markets.rwaCategory.others": "Diger",
+  "common.rwa": "TradFi"
 }

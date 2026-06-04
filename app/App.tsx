@@ -1,9 +1,11 @@
 import { Outlet } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { MarketCategoriesConfigProvider } from "@orderly.network/hooks";
 import OrderlyProvider from "@/components/orderlyProvider";
 import { HttpsRequiredWarning } from "@/components/HttpsRequiredWarning";
 import { withBasePath } from "./utils/base-path";
 import { getSEOConfig, getUserLanguage } from "./utils/seo";
+import { marketCategoryConfig } from "./utils/market-category-config";
 
 export default function App() {
   const seoConfig = getSEOConfig();
@@ -19,7 +21,9 @@ export default function App() {
       </Helmet>
       <HttpsRequiredWarning />
       <OrderlyProvider>
-        <Outlet />
+        <MarketCategoriesConfigProvider value={marketCategoryConfig}>
+          <Outlet />
+        </MarketCategoriesConfigProvider>
       </OrderlyProvider>
     </>
   );

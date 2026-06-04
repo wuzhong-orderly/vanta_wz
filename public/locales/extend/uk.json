@@ -32,5 +32,10 @@
   "points.address": "Адреса",
   "points.remark": "Примітка",
   "points.errors.loadPoints": "Не вдалося завантажити очки",
-  "points.errors.loadUserPoints": "Не вдалося завантажити очки користувача"
+  "points.errors.loadUserPoints": "Не вдалося завантажити очки користувача",
+  "markets.rwaCategory.stocks": "Акції",
+  "markets.rwaCategory.indices": "Індекси",
+  "markets.rwaCategory.commodities": "Сировинні товари",
+  "markets.rwaCategory.others": "Інше",
+  "common.rwa": "TradFi"
 }

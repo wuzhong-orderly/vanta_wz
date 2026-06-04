@@ -32,5 +32,10 @@
   "points.address": "アドレス",
   "points.remark": "備考",
   "points.errors.loadPoints": "ポイントの読み込みに失敗しました",
-  "points.errors.loadUserPoints": "ユーザーポイントの読み込みに失敗しました"
+  "points.errors.loadUserPoints": "ユーザーポイントの読み込みに失敗しました",
+  "markets.rwaCategory.stocks": "株式",
+  "markets.rwaCategory.indices": "指数",
+  "markets.rwaCategory.commodities": "コモディティ",
+  "markets.rwaCategory.others": "その他",
+  "common.rwa": "TradFi"
 }

@@ -32,5 +32,10 @@
   "points.address": "Adresse",
   "points.remark": "Remarque",
   "points.errors.loadPoints": "Échec du chargement des points",
-  "points.errors.loadUserPoints": "Échec du chargement des points utilisateur"
+  "points.errors.loadUserPoints": "Échec du chargement des points utilisateur",
+  "markets.rwaCategory.stocks": "Actions",
+  "markets.rwaCategory.indices": "Indices",
+  "markets.rwaCategory.commodities": "Matieres premieres",
+  "markets.rwaCategory.others": "Autres",
+  "common.rwa": "TradFi"
 }

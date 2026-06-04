@@ -34,5 +34,10 @@
   "points.address": "주소",
   "points.remark": "비고",
   "points.errors.loadPoints": "포인트를 불러오지 못했습니다",
-  "points.errors.loadUserPoints": "사용자 포인트를 불러오지 못했습니다"
+  "points.errors.loadUserPoints": "사용자 포인트를 불러오지 못했습니다",
+  "markets.rwaCategory.stocks": "주식",
+  "markets.rwaCategory.indices": "지수",
+  "markets.rwaCategory.commodities": "원자재",
+  "markets.rwaCategory.others": "기타",
+  "common.rwa": "TradFi"
 }

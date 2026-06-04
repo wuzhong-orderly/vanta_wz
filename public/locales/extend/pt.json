@@ -32,5 +32,10 @@
   "points.address": "Endereço",
   "points.remark": "Observação",
   "points.errors.loadPoints": "Falha ao carregar pontos",
-  "points.errors.loadUserPoints": "Falha ao carregar pontos do usuário"
+  "points.errors.loadUserPoints": "Falha ao carregar pontos do usuário",
+  "markets.rwaCategory.stocks": "Acoes",
+  "markets.rwaCategory.indices": "Indices",
+  "markets.rwaCategory.commodities": "Commodities",
+  "markets.rwaCategory.others": "Outros",
+  "common.rwa": "TradFi"
 }
