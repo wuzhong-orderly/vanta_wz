@@ -4,5 +4,6 @@
   "markets.rwaCategory.commodities": "السلع",
   "markets.rwaCategory.others": "اخرى",
   "common.rwa": "TradFi",
-  "extend.nav.csTeam": "الدعم"
+  "extend.nav.csTeam": "الدعم",
+  "restrictedInfo.description.default": "Vanta غير متاح في منطقتك. الوصول إلى منتجات وخدمات Vanta مقيد في بعض الولايات القضائية، بما في ذلك المناطق الخاضعة لقيود العقوبات أو حيث لا تكون خدماتنا مؤهلة للاستخدام. لمزيد من المعلومات، يرجى الاطلاع على شروط الاستخدام الخاصة بنا. إذا كنت تعتقد أن هذا خطأ، يرجى تحديث الصفحة أو التواصل مع فريق الدعم لدينا على Telegram."
 }

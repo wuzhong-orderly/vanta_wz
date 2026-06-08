@@ -37,5 +37,6 @@
   "markets.rwaCategory.indices": "شاخص ها",
   "markets.rwaCategory.commodities": "کالاها",
   "markets.rwaCategory.others": "سایر",
-  "common.rwa": "TradFi"
+  "common.rwa": "TradFi",
+  "restrictedInfo.description.default": "Vanta در منطقه شما در دسترس نیست. دسترسی به محصولات و خدمات Vanta در برخی حوزه‌های قضایی محدود است، از جمله مناطقی که مشمول محدودیت‌های تحریمی هستند یا جاهایی که خدمات ما واجد شرایط استفاده نیستند. برای اطلاعات بیشتر، لطفاً شرایط استفاده ما را ببینید. اگر فکر می‌کنید این یک خطاست، لطفاً صفحه را تازه‌سازی کنید یا با تیم پشتیبانی ما در Telegram تماس بگیرید."
 }

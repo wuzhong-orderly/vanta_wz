@@ -37,5 +37,6 @@
   "markets.rwaCategory.indices": "Indizes",
   "markets.rwaCategory.commodities": "Rohstoffe",
   "markets.rwaCategory.others": "Sonstige",
-  "common.rwa": "TradFi"
+  "common.rwa": "TradFi",
+  "restrictedInfo.description.default": "Vanta ist in Ihrer Region nicht verfügbar. Der Zugriff auf Produkte und Dienste von Vanta ist in bestimmten Rechtsordnungen eingeschränkt, einschließlich Regionen, die Sanktionsbeschränkungen unterliegen oder in denen unsere Dienste nicht zur Nutzung berechtigt sind. Weitere Informationen finden Sie in unseren Nutzungsbedingungen. Wenn Sie glauben, dass dies ein Fehler ist, aktualisieren Sie bitte die Seite oder kontaktieren Sie unser Support-Team auf Telegram."
 }

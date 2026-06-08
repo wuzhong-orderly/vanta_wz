@@ -37,5 +37,6 @@
   "markets.rwaCategory.indices": "指数",
   "markets.rwaCategory.commodities": "大宗商品",
   "markets.rwaCategory.others": "其他",
-  "common.rwa": "传统金融"
+  "common.rwa": "传统金融",
+  "restrictedInfo.description.default": "Vanta 在您所在地区不可用。Vanta 产品和服务在某些司法管辖区受到限制，包括受制裁限制的地区，或我们的服务不符合使用资格的地区。如需更多信息，请查看我们的使用条款。如果您认为这是错误，请刷新页面或通过 Telegram 联系我们的支持团队。"
 }

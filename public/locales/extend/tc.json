@@ -29,5 +29,6 @@
   "markets.rwaCategory.commodities": "大宗商品",
   "markets.rwaCategory.others": "其他",
   "common.rwa": "传统金融",
-  "extend.nav.csTeam": "客服支援"
+  "extend.nav.csTeam": "客服支援",
+  "restrictedInfo.description.default": "Vanta 在您所在的地區不可用。Vanta 產品與服務在某些司法管轄區受到限制，包括受制裁限制的地區，或我們的服務不符合使用資格的地區。如需更多資訊，請參閱我們的使用條款。如果您認為這是錯誤，請重新整理頁面，或透過 Telegram 聯絡我們的支援團隊。"
 }

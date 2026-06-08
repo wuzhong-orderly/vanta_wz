@@ -4,5 +4,6 @@
   "markets.rwaCategory.commodities": "סחורות",
   "markets.rwaCategory.others": "אחרים",
   "common.rwa": "TradFi",
-  "extend.nav.csTeam": "תמיכה"
+  "extend.nav.csTeam": "תמיכה",
+  "restrictedInfo.description.default": "Vanta אינה זמינה באזור שלך. הגישה למוצרים ולשירותים של Vanta מוגבלת בתחומי שיפוט מסוימים, כולל אזורים הכפופים למגבלות סנקציות או מקומות שבהם השירותים שלנו אינם זכאים לשימוש. למידע נוסף, עיין בתנאי השימוש שלנו. אם לדעתך מדובר בשגיאה, רענן את הדף או צור קשר עם צוות התמיכה שלנו ב-Telegram."
 }

@@ -37,5 +37,6 @@
   "markets.rwaCategory.indices": "Indici",
   "markets.rwaCategory.commodities": "Materie prime",
   "markets.rwaCategory.others": "Altri",
-  "common.rwa": "TradFi"
+  "common.rwa": "TradFi",
+  "restrictedInfo.description.default": "Vanta non è disponibile nella tua regione. L’accesso ai prodotti e ai servizi Vanta è limitato in alcune giurisdizioni, incluse le regioni soggette a restrizioni sanzionatorie o dove i nostri servizi non sono idonei all’uso. Per maggiori informazioni, consulta i nostri Termini di utilizzo. Se ritieni che si tratti di un errore, aggiorna la pagina o contatta il nostro team di supporto su Telegram."
 }
