@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import type {
@@ -56,6 +56,36 @@ const distributionHeaderMap: Record<keyof CampaignDistributionRow, string> = {
 
 const currentPointsHeaders = Object.values(currentPointsHeaderMap);
 const distributionHeaders = Object.values(distributionHeaderMap);
+
+type DataFileSnapshot = {
+  content: string;
+  mtimeMs: number;
+  size: number;
+};
+
+type CurrentPointsCache = {
+  file: DataFileSnapshot;
+  rows: CurrentPointsRow[];
+  rowsByAddress: Map<string, CurrentPointsRow>;
+  leaderboard?: LeaderboardRow[];
+};
+
+const dataFileCache = new Map<string, DataFileSnapshot>();
+let dataDirPromise: Promise<string> | undefined;
+let registryCache:
+  | {
+      file: DataFileSnapshot;
+      registry: CampaignRegistry;
+    }
+  | undefined;
+let currentPointsCache: CurrentPointsCache | undefined;
+const distributionRowsCache = new Map<
+  string,
+  {
+    file: DataFileSnapshot;
+    rows: CampaignDistributionRow[];
+  }
+>();
 
 export async function getCurrentCampaign() {
   const registry = await readRegistry();
@@ -361,8 +391,8 @@ export async function endCampaign(
 
 export async function getUserPoints(address: string): Promise<UserPointsResponse> {
   const normalizedAddress = normalizeAddress(address);
-  const rows = await readCurrentPointsRows();
-  const row = rows.find((item) => normalizeAddress(item.address) === normalizedAddress);
+  const { rowsByAddress } = await readCurrentPointsSnapshot();
+  const row = rowsByAddress.get(normalizedAddress);
 
   if (!row) {
     return toEmptyUserPointsResponse(address);
@@ -372,27 +402,39 @@ export async function getUserPoints(address: string): Promise<UserPointsResponse
 }
 
 export async function getTotalPointLeaderboard(): Promise<LeaderboardRow[]> {
-  const rows = await readCurrentPointsRows();
+  const cache = await readCurrentPointsSnapshot();
 
-  return rows
+  if (cache.leaderboard) {
+    return cache.leaderboard;
+  }
+
+  cache.leaderboard = cache.rows
     .map(toUserPointsResponse)
     .sort((left, right) => Number(right.totalPoint) - Number(left.totalPoint))
     .map((row, index) => ({
       ...row,
       rank: index + 1
     }));
+
+  return cache.leaderboard;
 }
 
 export async function getCampaignDistributionRows(
   campaign: CampaignConfig
 ): Promise<CampaignDistributionRow[]> {
-  const csv = await readOptionalDataFile(campaign.distributionCsv);
+  const file = await readOptionalDataFileSnapshot(campaign.distributionCsv);
 
-  if (!csv) {
+  if (!file) {
     return [];
   }
 
-  return parseCsv(csv).map((row) => ({
+  const cached = distributionRowsCache.get(campaign.distributionCsv);
+
+  if (cached && isSameSnapshot(cached.file, file)) {
+    return cached.rows;
+  }
+
+  const rows = parseCsv(file.content).map((row) => ({
     address: getCsvValue(row, distributionHeaderMap.address),
     orderlyPoints: getCsvValue(row, distributionHeaderMap.orderlyPoints),
     allocationPercentage: getCsvValue(row, distributionHeaderMap.allocationPercentage),
@@ -400,6 +442,13 @@ export async function getCampaignDistributionRows(
     specialPoints: getCsvValue(row, distributionHeaderMap.specialPoints),
     remark: getCsvValue(row, distributionHeaderMap.remark)
   }));
+
+  distributionRowsCache.set(campaign.distributionCsv, {
+    file,
+    rows
+  });
+
+  return rows;
 }
 
 export async function getCampaignDistributionRowsByNumber(campaignNumber: number) {
@@ -666,15 +715,35 @@ function mergeDistributionRowsByAddress(rows: CampaignDistributionRow[]) {
 }
 
 async function readRegistry(): Promise<CampaignRegistry> {
-  const raw = await readDataFile("campaigns.json");
-  return registrySchema.parse(JSON.parse(raw));
+  const file = await readDataFileSnapshot("campaigns.json");
+
+  if (registryCache && isSameSnapshot(registryCache.file, file)) {
+    return registryCache.registry;
+  }
+
+  const registry = registrySchema.parse(JSON.parse(file.content));
+  registryCache = {
+    file,
+    registry
+  };
+
+  return registry;
 }
 
 async function readCurrentPointsRows(): Promise<CurrentPointsRow[]> {
-  const registry = await readRegistry();
-  const csv = await readDataFile(registry.currentPointsCsv);
+  const { rows } = await readCurrentPointsSnapshot();
+  return rows;
+}
 
-  return parseCsv(csv).map((row) => ({
+async function readCurrentPointsSnapshot(): Promise<CurrentPointsCache> {
+  const registry = await readRegistry();
+  const file = await readDataFileSnapshot(registry.currentPointsCsv);
+
+  if (currentPointsCache && isSameSnapshot(currentPointsCache.file, file)) {
+    return currentPointsCache;
+  }
+
+  const rows = parseCsv(file.content).map((row) => ({
     address: getCsvValue(row, currentPointsHeaderMap.address),
     totalAccumulatedPointInPastCampaign: getCsvValue(
       row,
@@ -694,6 +763,19 @@ async function readCurrentPointsRows(): Promise<CurrentPointsRow[]> {
     ),
     remark: getCsvValue(row, currentPointsHeaderMap.remark)
   }));
+  const rowsByAddress = new Map(
+    rows
+      .map((row) => [normalizeAddress(row.address), row] as const)
+      .filter(([address]) => Boolean(address))
+  );
+
+  currentPointsCache = {
+    file,
+    rows,
+    rowsByAddress
+  };
+
+  return currentPointsCache;
 }
 
 function toUserPointsResponse(row: CurrentPointsRow): UserPointsResponse {
@@ -858,15 +940,34 @@ function stringValue(value: unknown) {
 }
 
 async function readDataFile(relativePath: string) {
-  return readFile(path.join(await getDataDir(), relativePath), "utf8");
+  return (await readDataFileSnapshot(relativePath)).content;
 }
 
-async function readOptionalDataFile(relativePath: string) {
+async function readDataFileSnapshot(relativePath: string): Promise<DataFileSnapshot> {
+  const absolutePath = path.join(await getDataDir(), relativePath);
+  const stats = await stat(absolutePath);
+  const cached = dataFileCache.get(relativePath);
+
+  if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
+    return cached;
+  }
+
+  const snapshot = {
+    content: await readFile(absolutePath, "utf8"),
+    mtimeMs: stats.mtimeMs,
+    size: stats.size
+  };
+
+  dataFileCache.set(relativePath, snapshot);
+  return snapshot;
+}
+
+async function readOptionalDataFileSnapshot(relativePath: string) {
   try {
-    return await readDataFile(relativePath);
+    return await readDataFileSnapshot(relativePath);
   } catch (error) {
     if (isFileNotFoundError(error)) {
-      return "";
+      return undefined;
     }
 
     throw error;
@@ -875,6 +976,31 @@ async function readOptionalDataFile(relativePath: string) {
 
 async function writeDataFile(relativePath: string, content: string) {
   await writeFile(path.join(await getDataDir(), relativePath), content, "utf8");
+  invalidateDataCaches(relativePath);
+}
+
+function invalidateDataCaches(relativePath?: string) {
+  if (relativePath) {
+    dataFileCache.delete(relativePath);
+  } else {
+    dataFileCache.clear();
+  }
+
+  if (!relativePath || relativePath === "campaigns.json") {
+    registryCache = undefined;
+  }
+
+  currentPointsCache = undefined;
+
+  if (relativePath) {
+    distributionRowsCache.delete(relativePath);
+  } else {
+    distributionRowsCache.clear();
+  }
+}
+
+function isSameSnapshot(left: DataFileSnapshot, right: DataFileSnapshot) {
+  return left.mtimeMs === right.mtimeMs && left.size === right.size;
 }
 
 function isFileNotFoundError(error: unknown) {
@@ -887,6 +1013,11 @@ function isFileNotFoundError(error: unknown) {
 }
 
 async function getDataDir() {
+  dataDirPromise ??= resolveDataDir();
+  return dataDirPromise;
+}
+
+async function resolveDataDir() {
   if (process.env.POINTS_DATA_DIR) {
     return process.env.POINTS_DATA_DIR;
   }
