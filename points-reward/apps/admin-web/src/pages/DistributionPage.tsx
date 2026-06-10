@@ -14,7 +14,10 @@ export function DistributionPage({
   onCampaignChange,
   onChange,
   onImport,
-  onSave
+  onSave,
+  isLoading,
+  isImporting,
+  isSaving
 }: {
   registry: CampaignRegistry;
   selectedCampaignNumber: number | null;
@@ -24,6 +27,9 @@ export function DistributionPage({
   onChange: (rows: CampaignDistributionRow[]) => void;
   onImport: (file: File) => void;
   onSave: () => void;
+  isLoading?: boolean;
+  isImporting?: boolean;
+  isSaving?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const filteredRows = useMemo(() => {
@@ -81,6 +87,9 @@ export function DistributionPage({
         ])
       }
       onImport={onImport}
+      isImporting={isImporting}
+      isLoading={isLoading}
+      isSaving={isSaving}
       onExport={() =>
         downloadCsv(
           `campaign-${selectedCampaignNumber}-distribution.csv`,

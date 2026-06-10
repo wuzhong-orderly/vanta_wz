@@ -8,12 +8,14 @@ export function CampaignManagementPage({
   onChange,
   onAdd,
   onSave,
+  isSaving,
   onStatusChange
 }: {
   registry: CampaignRegistry;
   onChange: (registry: CampaignRegistry) => void;
   onAdd: () => void;
   onSave: () => void;
+  isSaving?: boolean;
   onStatusChange: (
     campaignNumber: number,
     status: NonNullable<CampaignConfig["status"]>
@@ -57,9 +59,9 @@ export function CampaignManagementPage({
           <Plus size={17} />
           Add
         </button>
-        <button className="primary-button" onClick={onSave}>
-          <Save size={17} />
-          Save
+        <button className="primary-button" disabled={isSaving} onClick={onSave}>
+          {isSaving ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
+          {isSaving ? "Saving" : "Save"}
         </button>
       </div>
 

@@ -10,6 +10,9 @@ export function EditableRowsPanel<T>({
   allRows,
   extraControl,
   extraAction,
+  isImporting,
+  isLoading,
+  isSaving,
   onAdd,
   onImport,
   onExport,
@@ -22,6 +25,9 @@ export function EditableRowsPanel<T>({
   allRows: T[];
   extraControl?: ReactNode;
   extraAction?: ReactNode;
+  isImporting?: boolean;
+  isLoading?: boolean;
+  isSaving?: boolean;
   onAdd: () => void;
   onImport: (file: File) => void;
   onExport: () => void;
@@ -46,12 +52,13 @@ export function EditableRowsPanel<T>({
         </div>
         {extraControl}
         {extraAction}
-        <label className="file-button">
-          <FileUp size={17} />
-          Import
+        <label className={`file-button ${isImporting ? "disabled" : ""}`}>
+          {isImporting ? <span className="spinner button-spinner" aria-hidden="true" /> : <FileUp size={17} />}
+          {isImporting ? "Importing" : "Import"}
           <input
             type="file"
             accept=".csv,text/csv"
+            disabled={isImporting}
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) onImport(file);
@@ -67,12 +74,18 @@ export function EditableRowsPanel<T>({
           <Plus size={17} />
           Add
         </button>
-        <button className="primary-button" onClick={onSave}>
-          <Save size={17} />
-          Save
+        <button className="primary-button" disabled={isSaving} onClick={onSave}>
+          {isSaving ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
+          {isSaving ? "Saving" : "Save"}
         </button>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap loading-container">
+        {isLoading ? (
+          <div className="table-loading-overlay">
+            <span className="spinner" aria-hidden="true" />
+            <span>Loading CSV data</span>
+          </div>
+        ) : null}
         <table>
           <thead>
             <tr>

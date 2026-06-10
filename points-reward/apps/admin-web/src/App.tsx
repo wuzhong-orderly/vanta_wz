@@ -28,10 +28,20 @@ import type {
 import { formatNumber, getErrorMessage, numberValue } from "./utils";
 
 type Status = "Idle" | "Loading" | "Saved" | "Error";
+type BusyAction =
+  | "load-all"
+  | "load-distribution"
+  | "save-campaigns"
+  | "save-distribution"
+  | "rebuild-current"
+  | "import-csv"
+  | "pull-orderly"
+  | "end-campaign";
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>("campaigns");
   const [status, setStatus] = useState<Status>("Idle");
+  const [busyAction, setBusyAction] = useState<BusyAction | null>(null);
   const [message, setMessage] = useState("");
   const [registry, setRegistry] = useState<CampaignRegistry | null>(null);
   const [currentRows, setCurrentRows] = useState<CurrentPointsRow[]>([]);
@@ -85,6 +95,7 @@ export function App() {
   async function loadAll() {
     try {
       setStatus("Loading");
+      setBusyAction("load-all");
       const [registryResponse, currentResponse] = await Promise.all([
         getRegistry(),
         getCurrentPoints()
@@ -98,16 +109,25 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
   async function loadDistribution(campaignNumber: number) {
     try {
+      setStatus("Loading");
+      setBusyAction("load-distribution");
+      setMessage(`Loading campaign ${campaignNumber} CSV...`);
       const response = await getDistribution(campaignNumber);
       setDistributionRows(response.rows);
+      setStatus("Idle");
+      setMessage(`Loaded ${response.rows.length} distribution rows`);
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -116,6 +136,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("save-campaigns");
       const next = await saveRegistry(registry);
       const current = await rebuildCurrentPointsFromCampaigns();
       setRegistry(next);
@@ -127,6 +148,8 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -141,6 +164,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("rebuild-current");
       const response = await rebuildCurrentPointsFromCampaigns();
       setCurrentRows(response.rows);
       setStatus("Saved");
@@ -150,6 +174,8 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -158,6 +184,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("save-distribution");
       const response = await saveDistribution(selectedCampaignNumber, distributionRows);
       const current = await rebuildCurrentPointsFromCampaigns();
       setDistributionRows(response.rows);
@@ -169,6 +196,8 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -199,8 +228,12 @@ export function App() {
     setSelectedCampaignNumber(nextNumber);
   }
 
-  function importDistributionCsv(file: File) {
-    void file.text().then((text) => {
+  async function importDistributionCsv(file: File) {
+    try {
+      setStatus("Loading");
+      setBusyAction("import-csv");
+      setMessage(`Importing ${file.name}...`);
+      const text = await file.text();
       setDistributionRows(
         parseCsv(text).map((row) => ({
           address: row.address ?? "",
@@ -211,7 +244,14 @@ export function App() {
           remark: row.remark ?? ""
         }))
       );
-    });
+      setStatus("Idle");
+      setMessage(`Imported ${file.name}`);
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   function patchSelectedCampaign(patch: Partial<CampaignConfig>) {
@@ -241,6 +281,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("save-campaigns");
       const next = await saveRegistry(nextRegistry);
       const current = await rebuildCurrentPointsFromCampaigns();
       setRegistry(next);
@@ -252,6 +293,8 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -282,9 +325,17 @@ export function App() {
             <h1>{activeTitle}</h1>
           </div>
           <div className="toolbar">
-            <div className={`status ${status.toLowerCase()}`}>{message || status}</div>
-            <button className="icon-button" onClick={() => void loadAll()} title="Refresh">
-              <RefreshCw size={18} />
+            <div className={`status ${status.toLowerCase()}`}>
+              {status === "Loading" ? <span className="spinner" aria-hidden="true" /> : null}
+              {message || status}
+            </div>
+            <button
+              className="icon-button"
+              disabled={Boolean(busyAction)}
+              onClick={() => void loadAll()}
+              title="Refresh"
+            >
+              <RefreshCw className={busyAction === "load-all" ? "spin-icon" : ""} size={18} />
             </button>
           </div>
         </header>
@@ -298,6 +349,7 @@ export function App() {
               onChange={setRegistry}
               onAdd={addCampaign}
               onSave={() => void saveCampaigns()}
+              isSaving={busyAction === "save-campaigns"}
               onStatusChange={(campaignNumber, status) =>
                 void saveCampaignPatch(campaignNumber, { status })
               }
@@ -327,6 +379,7 @@ export function App() {
               onLoadStages={(brokerId) => getOrderlyStages(brokerId)}
               onPullOrderly={(options) => handlePullOrderly(options)}
               onEndCampaign={() => void handleEndCampaign()}
+              loadingAction={busyAction}
             />
           ) : null}
 
@@ -342,8 +395,11 @@ export function App() {
               allRows={distributionRows}
               onCampaignChange={setSelectedCampaignNumber}
               onChange={setDistributionRows}
-              onImport={importDistributionCsv}
+              onImport={(file) => void importDistributionCsv(file)}
               onSave={() => void saveDistributionTable()}
+              isLoading={busyAction === "load-distribution"}
+              isImporting={busyAction === "import-csv"}
+              isSaving={busyAction === "save-distribution"}
             />
           ) : null}
 
@@ -362,6 +418,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("pull-orderly");
       const preview = await importOrderlyRows(selectedCampaignNumber, options);
       setStatus("Idle");
       setMessage(`Pulled ${preview.rows.length} Orderly rows`);
@@ -377,6 +434,8 @@ export function App() {
       setStatus("Error");
       setMessage(getErrorMessage(error));
       return [];
+    } finally {
+      setBusyAction(null);
     }
   }
 
@@ -390,6 +449,7 @@ export function App() {
 
     try {
       setStatus("Loading");
+      setBusyAction("end-campaign");
       const result = await endCampaign(
         selectedCampaignNumber,
         distributionRows
@@ -403,6 +463,8 @@ export function App() {
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
     }
   }
 }

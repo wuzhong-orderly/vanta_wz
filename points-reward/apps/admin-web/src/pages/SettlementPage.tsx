@@ -21,6 +21,15 @@ const campaignStatuses: Array<NonNullable<CampaignConfig["status"]>> = [
 type OrderlyMode = "stage-ranking" | "epoch-ranking";
 type CampaignDataSortKey = keyof CampaignDistributionRow;
 type SortDirection = "asc" | "desc";
+type LoadingAction =
+  | "load-all"
+  | "load-distribution"
+  | "save-campaigns"
+  | "save-distribution"
+  | "rebuild-current"
+  | "import-csv"
+  | "pull-orderly"
+  | "end-campaign";
 
 const campaignDataColumns: Array<{ key: CampaignDataSortKey; label: string; numeric?: boolean }> = [
   { key: "address", label: "Address" },
@@ -44,7 +53,8 @@ export function SettlementPage({
   onSaveData,
   onLoadStages,
   onPullOrderly,
-  onEndCampaign
+  onEndCampaign,
+  loadingAction
 }: {
   registry: CampaignRegistry;
   selectedCampaignNumber: number | null;
@@ -64,6 +74,7 @@ export function SettlementPage({
     epochId?: string;
   }) => Promise<CampaignDistributionRow[]>;
   onEndCampaign: () => void;
+  loadingAction?: LoadingAction | null;
 }) {
   const campaign = registry.campaigns.find(
     (item) => item.campaignNumber === selectedCampaignNumber
@@ -106,6 +117,10 @@ export function SettlementPage({
     mode === "stage-ranking"
       ? Boolean(stage.trim())
       : Boolean(stage.trim()) && Boolean(epochId.trim());
+  const isLoadingDistribution = loadingAction === "load-distribution";
+  const isSavingCampaign = loadingAction === "save-campaigns";
+  const isSavingDistribution = loadingAction === "save-distribution";
+  const isPullingOrderly = loadingAction === "pull-orderly";
 
   const orderlyPointTotal = useMemo(
     () =>
@@ -365,9 +380,13 @@ export function SettlementPage({
               onChange={(event) => onCampaignPatch({ distributionCsv: event.target.value })}
             />
           </label>
-          <button className="secondary-button align-end" onClick={onCampaignSave}>
-            <Save size={17} />
-            Save campaign
+          <button
+            className="secondary-button align-end"
+            disabled={isSavingCampaign}
+            onClick={onCampaignSave}
+          >
+            {isSavingCampaign ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
+            {isSavingCampaign ? "Saving" : "Save campaign"}
           </button>
         </div>
       </div>
@@ -469,11 +488,11 @@ export function SettlementPage({
             {metadataMessage ? <div className="inline-message">{metadataMessage}</div> : null}
             <button
               className="secondary-button"
-              disabled={!canPullOrderly}
+              disabled={!canPullOrderly || isPullingOrderly}
               onClick={() => void pullOrderlyRows()}
             >
-              <Download size={17} />
-              Pull data from Orderly
+              {isPullingOrderly ? <span className="spinner button-spinner" aria-hidden="true" /> : <Download size={17} />}
+              {isPullingOrderly ? "Pulling" : "Pull data from Orderly"}
             </button>
           </div>
         </div>
@@ -558,12 +577,23 @@ export function SettlementPage({
             <button className="icon-button" onClick={addCampaignDataRow} title="Add campaign row">
               <Plus size={16} />
             </button>
-            <button className="icon-button" onClick={onRefreshData} title="Refresh campaign data">
-              <RefreshCw size={16} />
+            <button
+              className="icon-button"
+              disabled={isLoadingDistribution}
+              onClick={onRefreshData}
+              title="Refresh campaign data"
+            >
+              <RefreshCw className={isLoadingDistribution ? "spin-icon" : ""} size={16} />
             </button>
           </div>
         </div>
-        <div className="table-wrap embedded-table-wrap">
+        <div className="table-wrap embedded-table-wrap loading-container">
+          {isLoadingDistribution ? (
+            <div className="table-loading-overlay">
+              <span className="spinner" aria-hidden="true" />
+              <span>Loading campaign CSV</span>
+            </div>
+          ) : null}
           <table>
             <thead>
               <tr>
@@ -656,9 +686,13 @@ export function SettlementPage({
             </tbody>
           </table>
         </div>
-        <button className="primary-button save-data-button" onClick={onSaveData}>
-          <Save size={17} />
-          Save data
+        <button
+          className="primary-button save-data-button"
+          disabled={isSavingDistribution}
+          onClick={onSaveData}
+        >
+          {isSavingDistribution ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
+          {isSavingDistribution ? "Saving" : "Save data"}
         </button>
         <Pagination
           page={campaignDataPage}

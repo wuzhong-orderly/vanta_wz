@@ -276,15 +276,49 @@ button:disabled {
   display: none;
 }
 
+.file-button.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .status {
+  align-items: center;
   border-radius: 999px;
   color: #536173;
+  display: flex;
   font-size: 13px;
+  gap: 7px;
   max-width: 420px;
   overflow: hidden;
   padding: 7px 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.spinner {
+  animation: spin 0.75s linear infinite;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+.button-spinner {
+  height: 16px;
+  width: 16px;
+}
+
+.spin-icon {
+  animation: spin 0.85s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .status.saved {
@@ -326,6 +360,25 @@ select {
   border-radius: 8px;
   max-height: calc(100vh - 292px);
   overflow: auto;
+}
+
+.loading-container {
+  position: relative;
+}
+
+.table-loading-overlay {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.78);
+  color: #435164;
+  display: flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 8px;
+  inset: 0;
+  justify-content: center;
+  min-height: 120px;
+  position: absolute;
+  z-index: 3;
 }
 
 table {
