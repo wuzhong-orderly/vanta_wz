@@ -72,6 +72,22 @@ const importOrderlySchema = z.object({
 });
 
 export async function registerAdminRoutes(app: FastifyInstance) {
+  app.addHook("preHandler", async (request, reply) => {
+    if (!request.url.startsWith("/admin/")) {
+      return;
+    }
+
+    const expectedToken = process.env.POINTS_ADMIN_TOKEN;
+    const authorization = request.headers.authorization ?? "";
+    const token = authorization.replace(/^Bearer\s+/i, "");
+
+    if (!expectedToken || token !== expectedToken) {
+      return reply.code(401).send({
+        error: "Unauthorized"
+      });
+    }
+  });
+
   app.get("/admin/registry", async () => getRegistry());
 
   app.put("/admin/registry", async (request) => {

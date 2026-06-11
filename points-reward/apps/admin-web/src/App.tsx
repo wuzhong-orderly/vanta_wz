@@ -1,7 +1,9 @@
-import { RefreshCw, Trophy } from "lucide-react";
+import { KeyRound, RefreshCw, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+  clearAdminToken,
   endCampaign,
+  getAdminToken,
   getDistribution,
   getInviteCodes,
   getOrderlyStages,
@@ -11,6 +13,7 @@ import {
   rebuildSettledPointsFromCampaigns,
   saveDistribution,
   saveInviteCodes,
+  setAdminToken,
   saveSettledPoints,
   saveRegistry
 } from "./api";
@@ -56,18 +59,62 @@ export function App() {
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
   const [inviteRows, setInviteRows] = useState<InviteCodeRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
+  const [adminToken, setAdminTokenState] = useState(() => getAdminToken());
 
   useEffect(() => {
-    void loadAll();
+    if (adminToken) {
+      void loadAll();
+    }
+  }, [adminToken]);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      handleAdminLogout();
+      setStatus("Error");
+      setMessage("Admin token is invalid or expired");
+    }
+
+    window.addEventListener("points-admin-unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener("points-admin-unauthorized", handleUnauthorized);
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedCampaignNumber) {
+    if (adminToken && selectedCampaignNumber) {
       void loadDistribution(selectedCampaignNumber);
     }
-  }, [selectedCampaignNumber]);
+  }, [adminToken, selectedCampaignNumber]);
 
   const activeTitle = tabs.find((tab) => tab.id === activeTab)?.label ?? "Points Operations";
+
+  function handleAdminLogin(token: string) {
+    const trimmedToken = token.trim();
+
+    if (!trimmedToken) {
+      setStatus("Error");
+      setMessage("Admin token is required");
+      return;
+    }
+
+    setAdminToken(trimmedToken);
+    setAdminTokenState(trimmedToken);
+    setStatus("Loading");
+    setMessage("Checking admin token...");
+  }
+
+  function handleAdminLogout() {
+    clearAdminToken();
+    setAdminTokenState("");
+    setRegistry(null);
+    setSettledRows([]);
+    setDistributionRows([]);
+    setInviteRows([]);
+    setSelectedCampaignNumber(null);
+    setStatus("Idle");
+    setMessage("");
+  }
 
   async function loadAll() {
     try {
@@ -87,6 +134,13 @@ export function App() {
       setMessage("Data loaded");
       setStatus("Idle");
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        handleAdminLogout();
+        setStatus("Error");
+        setMessage("Admin token is invalid or expired");
+        return;
+      }
+
       setStatus("Error");
       setMessage(getErrorMessage(error));
     } finally {
@@ -389,6 +443,15 @@ export function App() {
     }
   }
 
+  if (!adminToken) {
+    return (
+      <AdminTokenGate
+        errorMessage={status === "Error" ? message : ""}
+        onSubmit={handleAdminLogin}
+      />
+    );
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -427,6 +490,9 @@ export function App() {
               title="Refresh"
             >
               <RefreshCw className={busyAction === "load-all" ? "spin-icon" : ""} size={18} />
+            </button>
+            <button className="secondary-button" onClick={handleAdminLogout}>
+              Sign out
             </button>
           </div>
         </header>
@@ -577,6 +643,52 @@ export function App() {
       setBusyAction(null);
     }
   }
+}
+
+function AdminTokenGate({
+  errorMessage,
+  onSubmit
+}: {
+  errorMessage: string;
+  onSubmit: (token: string) => void;
+}) {
+  const [token, setToken] = useState("");
+
+  return (
+    <main className="auth-shell">
+      <form
+        className="auth-panel"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(token);
+        }}
+      >
+        <div className="auth-brand">
+          <KeyRound size={24} />
+          <span>Vanta Points Admin</span>
+        </div>
+        <label>
+          <span>Admin token</span>
+          <input
+            autoComplete="current-password"
+            autoFocus
+            onChange={(event) => setToken(event.target.value)}
+            placeholder="Paste admin token"
+            type="password"
+            value={token}
+          />
+        </label>
+        {errorMessage ? <div className="auth-error">{errorMessage}</div> : null}
+        <button className="primary-button" type="submit">
+          Unlock admin
+        </button>
+      </form>
+    </main>
+  );
+}
+
+function isUnauthorizedError(error: unknown) {
+  return error instanceof Error && error.message === "Unauthorized";
 }
 
 function validateCurrentCampaign(registry: CampaignRegistry) {

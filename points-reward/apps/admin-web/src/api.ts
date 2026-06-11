@@ -10,6 +10,19 @@ import type {
 } from "./types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+const ADMIN_TOKEN_STORAGE_KEY = "pointsRewardAdminToken";
+
+export function getAdminToken() {
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "";
+}
+
+export function setAdminToken(token: string) {
+  window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+}
+
+export function clearAdminToken() {
+  window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+}
 
 function resolveRequestUrl(url: string) {
   if (!API_BASE_URL) {
@@ -141,12 +154,26 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
+  if (url.startsWith("/admin/")) {
+    const token = getAdminToken();
+
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+
   const response = await fetch(resolveRequestUrl(url), {
     ...init,
     headers
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAdminToken();
+      window.dispatchEvent(new Event("points-admin-unauthorized"));
+      throw new Error("Unauthorized");
+    }
+
     const message = await response.text();
     throw new Error(message || `Request failed: ${response.status}`);
   }
