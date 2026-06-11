@@ -21,6 +21,7 @@ type CampaignConfig = {
   startTime: string;
   endTime: string;
   distributionCsv: string;
+  currentCampaign?: boolean;
   status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED";
 };
 
@@ -119,7 +120,7 @@ export default function PointsIndex() {
       setError("");
 
       const [campaignResponse, campaignsResponse, leaderboardResponse] = await Promise.all([
-        fetchJson<{ campaign: CampaignConfig | null }>("/points-api/campaign/latest"),
+        fetchJson<{ campaign: CampaignConfig | null }>("/points-api/campaign/current"),
         fetchJson<{ items: CampaignConfig[] }>("/points-api/campaigns"),
         fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
       ]);
@@ -207,7 +208,7 @@ export default function PointsIndex() {
             <h1>{campaign?.campaignName ?? t("points.fallbackCampaign", "Points Campaign")}</h1>
             <div className="points-campaign-meta">
               <span className={`points-status-badge ${statusClassName(campaign?.status)}`}>
-                {t("points.latestCampaign", "Latest Campaign")}:{" "}
+                {t("points.currentCampaignLabel", "Current Campaign")}:{" "}
                 {formatCampaignStatus(campaign?.status)}
               </span>
               <span>
@@ -254,7 +255,6 @@ export default function PointsIndex() {
             locale={locale}
           />
           <PointMetricWithSelect
-            label={t("points.pastCampaigns", "My Past Points")}
             value={selectedPastPoints}
             locale={locale}
             selectLabel={t("points.selectPastPoints", "Select past points")}
@@ -263,7 +263,7 @@ export default function PointsIndex() {
             options={[
               {
                 value: "total",
-                label: t("points.totalPastPoints", "Total Past Points")
+                label: t("points.totalPoints", "Total Points")
               },
               ...campaignPoints.map((row) => ({
                 value: `campaign-${row.campaignNumber}` as const,
@@ -275,12 +275,9 @@ export default function PointsIndex() {
 
         <section className="points-leaderboard">
           <div className="points-section-title">
-            <div>
-              <h2>{leaderboardTitle(leaderboardMode)}</h2>
-            </div>
             <select
               aria-label={t("points.selectLeaderboard", "Select leaderboard")}
-              className="points-select"
+              className="points-select points-title-select"
               onChange={(event) => setLeaderboardMode(event.target.value as LeaderboardMode)}
               value={leaderboardMode}
             >
@@ -374,7 +371,6 @@ function PointMetric({
 }
 
 function PointMetricWithSelect({
-  label,
   value,
   locale,
   selectLabel,
@@ -382,7 +378,6 @@ function PointMetricWithSelect({
   onChange,
   options
 }: {
-  label: string;
   value: string;
   locale: string;
   selectLabel: string;
@@ -395,11 +390,9 @@ function PointMetricWithSelect({
 }) {
   return (
     <div className="points-metric">
-      <span>{label}</span>
-      <strong>{formatPoints(value, locale)}</strong>
       <select
         aria-label={selectLabel}
-        className="points-select points-metric-select"
+        className="points-select points-metric-select points-metric-title-select"
         onChange={(event) => onChange(event.target.value as "total" | `campaign-${number}`)}
         value={valueMode}
       >
@@ -409,6 +402,7 @@ function PointMetricWithSelect({
           </option>
         ))}
       </select>
+      <strong>{formatPoints(value, locale)}</strong>
     </div>
   );
 }
@@ -481,14 +475,6 @@ function formatDateRange(startTime: string, endTime: string, locale = "en") {
 
 function getLeaderboardPoints(row: DisplayLeaderboardRow) {
   return "points" in row ? row.points : row.totalPoint;
-}
-
-function leaderboardTitle(mode: LeaderboardMode) {
-  if (mode === "total") {
-    return "Total Points Leaderboard";
-  }
-
-  return `Campaign ${mode.replace("campaign-", "")} Leaderboard`;
 }
 
 function formatCampaignStatus(status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED") {

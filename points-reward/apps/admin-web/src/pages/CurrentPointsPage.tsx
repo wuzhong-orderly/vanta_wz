@@ -1,33 +1,30 @@
-import { Search, TableProperties } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Pagination, defaultPageSize, paginateRows } from "../components/Pagination";
+import { RotateCcw, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { EditableRowsPanel } from "../components/EditableRowsPanel";
+import { settledHeaders } from "../constants";
+import { downloadCsv, stringifyCsv } from "../csv";
 import type { SettledPointsRow } from "../types";
-import { numberValue } from "../utils";
 
-type SettledPointSortKey = keyof SettledPointsRow;
-type SortDirection = "asc" | "desc";
-
-const settledPointColumns: Array<{
-  header: string;
-  id: string;
-  key?: SettledPointSortKey;
-  numeric?: boolean;
-}> = [
-  { header: "ranking", id: "ranking" },
-  { header: "address", id: "address", key: "address" },
-  { header: "settled_points", id: "settledPoints", key: "settledPoints", numeric: true },
-  { header: "special_points", id: "specialPoints", key: "specialPoints", numeric: true },
-  { header: "remark", id: "remark", key: "remark" }
-];
-
-export function CurrentPointsPage({ rows }: { rows: SettledPointsRow[] }) {
-  const [sort, setSort] = useState<{ direction: SortDirection; key: SettledPointSortKey }>({
-    direction: "desc",
-    key: "settledPoints"
-  });
+export function CurrentPointsPage({
+  rows,
+  onChange,
+  onImport,
+  onRebuild,
+  onSave,
+  isImporting,
+  isRebuilding,
+  isSaving
+}: {
+  rows: SettledPointsRow[];
+  onChange: (rows: SettledPointsRow[]) => void;
+  onImport: (file: File) => void;
+  onRebuild: () => void;
+  onSave: () => void;
+  isImporting?: boolean;
+  isRebuilding?: boolean;
+  isSaving?: boolean;
+}) {
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -35,104 +32,121 @@ export function CurrentPointsPage({ rows }: { rows: SettledPointsRow[] }) {
       return rows;
     }
 
-    return rows.filter((row) => row.address.toLowerCase().includes(normalizedQuery));
+    return rows.filter(
+      (row) =>
+        row.address.toLowerCase().includes(normalizedQuery) ||
+        row.remark.toLowerCase().includes(normalizedQuery)
+    );
   }, [query, rows]);
 
-  const sortedRows = useMemo(() => {
-    const column = settledPointColumns.find((item) => item.key === sort.key);
-
-    return [...filteredRows].sort((left, right) => {
-      const result = column?.numeric
-        ? getNumericValue(left, sort.key) - getNumericValue(right, sort.key)
-        : getTextValue(left, sort.key).localeCompare(getTextValue(right, sort.key), undefined, {
-            sensitivity: "base"
-          });
-
-      return sort.direction === "asc" ? result : -result;
-    });
-  }, [filteredRows, sort]);
-  const pageRows = paginateRows(sortedRows, page, defaultPageSize);
-
-  useEffect(() => {
-    setPage(1);
-  }, [query, rows.length]);
-
-  function sortRows(key: SettledPointSortKey) {
-    setSort((current) => ({
-      direction: current.key === key && current.direction === "desc" ? "asc" : "desc",
-      key
-    }));
-  }
-
   return (
-    <div className="panel">
-      <div className="panel-actions">
-        <div className="panel-title">
-          <TableProperties size={18} />
-          <span>Settled points</span>
-          <strong>{rows.length}</strong>
-        </div>
+    <EditableRowsPanel
+      title="Settled Point & Special Point Management"
+      headers={settledHeaders}
+      rows={filteredRows}
+      allRows={rows}
+      extraControl={
         <div className="search table-search">
           <Search size={17} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search address"
+            placeholder="Search address or remark"
           />
         </div>
-      </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {settledPointColumns.map((column) => (
-                <th key={column.id}>
-                  <button
-                    className="table-sort-button"
-                    disabled={!column.key}
-                    onClick={() => {
-                      if (column.key) {
-                        sortRows(column.key);
-                      }
-                    }}
-                  >
-                    {column.header}
-                    {column.key ? (
-                      <span>
-                        {sort.key === column.key ? (sort.direction === "asc" ? "↑" : "↓") : "↕"}
-                      </span>
-                    ) : null}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((row, index) => {
-              const ranking = sortedRows.indexOf(row) + 1;
-
-              return (
-              <tr key={`${row.address}-${index}`}>
-                <td>{ranking}</td>
-                <td>{row.address}</td>
-                <td>{row.settledPoints}</td>
-                <td>{row.specialPoints}</td>
-                <td>{row.remark}</td>
-              </tr>
-            );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <Pagination page={page} total={sortedRows.length} onPageChange={setPage} />
-    </div>
+      }
+      extraAction={
+        <button className="secondary-button" disabled={isRebuilding} onClick={onRebuild}>
+          {isRebuilding ? (
+            <span className="spinner button-spinner" aria-hidden="true" />
+          ) : (
+            <RotateCcw size={17} />
+          )}
+          {isRebuilding ? "Rebuilding" : "Rebuild settled points"}
+        </button>
+      }
+      isImporting={isImporting}
+      isSaving={isSaving}
+      onAdd={() =>
+        onChange([
+          ...rows,
+          {
+            address: "",
+            settledPoints: "0",
+            specialPoints: "0",
+            remark: ""
+          }
+        ])
+      }
+      onImport={onImport}
+      onExport={() =>
+        downloadCsv(
+          "settled-points.csv",
+          stringifyCsv(
+            settledHeaders,
+            rows.map((row) => ({
+              address: row.address,
+              settled_points: row.settledPoints,
+              special_points: row.specialPoints,
+              remark: row.remark
+            }))
+          )
+        )
+      }
+      onSave={onSave}
+      renderRow={(row) => (
+        <SettledPointTableRow
+          key={`${row.address}-${rows.indexOf(row)}`}
+          row={row}
+          rows={rows}
+          onChange={onChange}
+        />
+      )}
+    />
   );
 }
 
-function getNumericValue(row: SettledPointsRow, key: SettledPointSortKey) {
-  return numberValue(row[key]);
-}
+function SettledPointTableRow({
+  row,
+  rows,
+  onChange
+}: {
+  row: SettledPointsRow;
+  rows: SettledPointsRow[];
+  onChange: (rows: SettledPointsRow[]) => void;
+}) {
+  const index = rows.indexOf(row);
 
-function getTextValue(row: SettledPointsRow, key: SettledPointSortKey) {
-  return row[key];
+  function patch(patchRow: Partial<SettledPointsRow>) {
+    onChange(rows.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patchRow } : item)));
+  }
+
+  return (
+    <tr>
+      <td>
+        <input value={row.address} onChange={(event) => patch({ address: event.target.value })} />
+      </td>
+      <td>
+        <input aria-label="settled_points" readOnly value={row.settledPoints} />
+      </td>
+      <td>
+        <input
+          value={row.specialPoints}
+          onChange={(event) => patch({ specialPoints: event.target.value })}
+        />
+      </td>
+      <td>
+        <input value={row.remark} onChange={(event) => patch({ remark: event.target.value })} />
+      </td>
+      <td>
+        <button
+          className="icon-button danger"
+          onClick={() => onChange(rows.filter((_, itemIndex) => itemIndex !== index))}
+          title="Delete row"
+        >
+          <Trash2 size={16} />
+        </button>
+      </td>
+    </tr>
+  );
 }

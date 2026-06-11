@@ -275,6 +275,16 @@
   width: 100%;
 }
 
+.points-title-select,
+.points-metric-title-select {
+  font-size: 18px;
+  font-weight: 760;
+}
+
+.points-title-select {
+  min-width: 260px;
+}
+
 .points-user-panel {
   display: grid;
   gap: 16px;

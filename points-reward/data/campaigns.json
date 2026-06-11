@@ -12,7 +12,8 @@
       "status": "ACTIVE",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": ""
+      "orderlyEpochId": "",
+      "currentCampaign": true
     },
     {
       "campaignNumber": 2,
@@ -24,7 +25,8 @@
       "status": "SETTLED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": ""
+      "orderlyEpochId": "",
+      "currentCampaign": false
     },
     {
       "campaignNumber": 3,
@@ -36,7 +38,8 @@
       "status": "SETTLED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": ""
+      "orderlyEpochId": "",
+      "currentCampaign": false
     },
     {
       "campaignNumber": 4,
@@ -48,7 +51,8 @@
       "status": "DRAFT",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": ""
+      "orderlyEpochId": "",
+      "currentCampaign": false
     }
   ]
 }

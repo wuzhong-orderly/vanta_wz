@@ -6,6 +6,7 @@ export interface CampaignConfig {
   startTime: string;
   endTime: string;
   distributionCsv: string;
+  currentCampaign?: boolean;
   status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED";
   orderlyBrokerId?: string;
   orderlyStageId?: string;

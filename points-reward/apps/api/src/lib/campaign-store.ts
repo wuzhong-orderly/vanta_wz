@@ -26,6 +26,7 @@ const registrySchema = z.object({
         startTime: z.string().datetime(),
         endTime: z.string().datetime(),
         distributionCsv: z.string().min(1),
+        currentCampaign: z.boolean().optional(),
         status: z.enum(["DRAFT", "ACTIVE", "ENDED", "SETTLED"]).optional(),
         orderlyBrokerId: z.string().optional(),
         orderlyStageId: z.string().optional(),
@@ -35,11 +36,24 @@ const registrySchema = z.object({
       })
     )
     .min(1)
-}).transform((registry) => ({
-  currentCampaignNumber: registry.currentCampaignNumber,
-  settledPointsCsv: registry.settledPointsCsv ?? registry.currentPointsCsv ?? "settled-points.csv",
-  campaigns: registry.campaigns
-}));
+}).transform((registry) => {
+  const hasCurrentCampaignFlag = registry.campaigns.some(
+    (campaign) => campaign.currentCampaign === true
+  );
+  const campaigns = registry.campaigns.map((campaign) => ({
+    ...campaign,
+    currentCampaign: hasCurrentCampaignFlag
+      ? campaign.currentCampaign === true
+      : campaign.campaignNumber === registry.currentCampaignNumber
+  }));
+  const currentCampaign = campaigns.find((campaign) => campaign.currentCampaign);
+
+  return {
+    currentCampaignNumber: currentCampaign?.campaignNumber ?? registry.currentCampaignNumber,
+    settledPointsCsv: registry.settledPointsCsv ?? registry.currentPointsCsv ?? "settled-points.csv",
+    campaigns
+  };
+});
 
 const settledPointsHeaderMap: Record<keyof SettledPointsRow, string> = {
   address: "address",
@@ -91,12 +105,11 @@ const distributionRowsCache = new Map<
 
 export async function getCurrentCampaign() {
   const registry = await readRegistry();
-  const campaign = registry.campaigns.find(
-    (item) => item.campaignNumber === registry.currentCampaignNumber
-  );
+  assertExactlyOneCurrentCampaign(registry.campaigns);
+  const campaign = registry.campaigns.find((item) => item.currentCampaign === true);
 
   if (!campaign) {
-    throw new Error(`Current campaign ${registry.currentCampaignNumber} is not configured`);
+    throw new Error("Exactly one campaign must be configured as currentCampaign=true");
   }
 
   return campaign;
@@ -150,8 +163,14 @@ export async function getRegistry(): Promise<CampaignRegistry> {
 
 export async function saveRegistry(registry: CampaignRegistry) {
   const parsed = registrySchema.parse(registry);
-  await writeDataFile("campaigns.json", `${JSON.stringify(parsed, null, 2)}\n`);
-  return parsed;
+  assertExactlyOneCurrentCampaign(parsed.campaigns);
+  const currentCampaign = parsed.campaigns.find((campaign) => campaign.currentCampaign === true);
+  const nextRegistry = {
+    ...parsed,
+    currentCampaignNumber: currentCampaign?.campaignNumber ?? parsed.currentCampaignNumber
+  };
+  await writeDataFile("campaigns.json", `${JSON.stringify(nextRegistry, null, 2)}\n`);
+  return nextRegistry;
 }
 
 export async function getSettledPointsRows(): Promise<SettledPointsRow[]> {
@@ -378,7 +397,7 @@ export async function getUserPoints(address: string): Promise<UserPointsResponse
   const normalizedAddress = normalizeAddress(address);
   const [{ rowsByAddress }, currentPointsByAddress] = await Promise.all([
     readSettledPointsSnapshot(),
-    getActiveCampaignPointsByAddress()
+    getCurrentCampaignPointsByAddress()
   ]);
   const row = rowsByAddress.get(normalizedAddress);
   const currentPoint = currentPointsByAddress.get(normalizedAddress)?.vantaPoints ?? "0";
@@ -397,7 +416,7 @@ export async function getUserPoints(address: string): Promise<UserPointsResponse
 export async function getTotalPointLeaderboard(): Promise<LeaderboardRow[]> {
   const [{ rowsByAddress }, currentPointsByAddress] = await Promise.all([
     readSettledPointsSnapshot(),
-    getActiveCampaignPointsByAddress()
+    getCurrentCampaignPointsByAddress()
   ]);
   const addresses = new Set([...rowsByAddress.keys(), ...currentPointsByAddress.keys()]);
 
@@ -611,6 +630,16 @@ function getCampaignByNumber(registry: CampaignRegistry, campaignNumber: number)
   return campaign;
 }
 
+function assertExactlyOneCurrentCampaign(campaigns: CampaignConfig[]) {
+  const currentCampaigns = campaigns.filter((campaign) => campaign.currentCampaign === true);
+
+  if (currentCampaigns.length !== 1) {
+    throw new Error(
+      `Exactly one campaign must have currentCampaign=true. Found ${currentCampaigns.length}.`
+    );
+  }
+}
+
 async function fetchOrderlyRows(options: {
   mode: "stage-ranking" | "epoch-ranking" | "leaderboard" | "rankings";
   stage?: string;
@@ -810,32 +839,22 @@ async function readSettledPointsSnapshot(): Promise<SettledPointsCache> {
   return settledPointsCache;
 }
 
-async function getActiveCampaignPointsByAddress() {
-  const registry = await readRegistry();
-  const campaigns = registry.campaigns.filter((campaign) =>
-    campaign.status
-      ? campaign.status === "ACTIVE" || campaign.status === "ENDED"
-      : campaign.campaignNumber === registry.currentCampaignNumber
-  );
+async function getCurrentCampaignPointsByAddress() {
+  const campaign = await getCurrentCampaign();
   const rowsByAddress = new Map<string, { address: string; vantaPoints: string }>();
+  const rows = await getCampaignDistributionRows(campaign);
 
-  for (const campaign of campaigns) {
-    const rows = await getCampaignDistributionRows(campaign);
+  for (const row of rows) {
+    const normalizedAddress = normalizeAddress(row.address);
 
-    for (const row of rows) {
-      const normalizedAddress = normalizeAddress(row.address);
-
-      if (!normalizedAddress) {
-        continue;
-      }
-
-      const existing = rowsByAddress.get(normalizedAddress);
-
-      rowsByAddress.set(normalizedAddress, {
-        address: existing?.address ?? row.address,
-        vantaPoints: addDecimalStrings(existing?.vantaPoints ?? "0", normalizeNumber(row.vantaPoints))
-      });
+    if (!normalizedAddress) {
+      continue;
     }
+
+    rowsByAddress.set(normalizedAddress, {
+      address: row.address,
+      vantaPoints: normalizeNumber(row.vantaPoints)
+    });
   }
 
   return rowsByAddress;

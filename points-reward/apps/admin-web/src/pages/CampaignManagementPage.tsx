@@ -23,6 +23,10 @@ export function CampaignManagementPage({
 }) {
   const [page, setPage] = useState(1);
   const pageCampaigns = paginateRows(registry.campaigns, page, defaultPageSize);
+  const currentCampaignCount = registry.campaigns.filter(
+    (campaign) => campaign.currentCampaign === true
+  ).length;
+  const hasValidCurrentCampaign = currentCampaignCount === 1;
 
   useEffect(() => {
     setPage(1);
@@ -47,6 +51,19 @@ export function CampaignManagementPage({
     });
   }
 
+  function setCurrentCampaign(index: number) {
+    const currentCampaignNumber = registry.campaigns[index]?.campaignNumber;
+
+    onChange({
+      ...registry,
+      currentCampaignNumber: currentCampaignNumber ?? registry.currentCampaignNumber,
+      campaigns: registry.campaigns.map((campaign, campaignIndex) => ({
+        ...campaign,
+        currentCampaign: campaignIndex === index
+      }))
+    });
+  }
+
   return (
     <div className="panel">
       <div className="panel-actions">
@@ -59,16 +76,26 @@ export function CampaignManagementPage({
           <Plus size={17} />
           Add
         </button>
-        <button className="primary-button" disabled={isSaving} onClick={onSave}>
+        <button
+          className="primary-button"
+          disabled={isSaving || !hasValidCurrentCampaign}
+          onClick={onSave}
+        >
           {isSaving ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
           {isSaving ? "Saving" : "Save"}
         </button>
+      </div>
+      <div className={hasValidCurrentCampaign ? "inline-message" : "inline-message error"}>
+        {hasValidCurrentCampaign
+          ? "Current campaign is configured."
+          : `Select exactly one current campaign. Current selection count: ${currentCampaignCount}.`}
       </div>
 
       <div className="table-wrap">
         <table className="campaign-management-table">
           <thead>
             <tr>
+              <th>Current</th>
               <th>No.</th>
               <th>Name</th>
               <th>Total Vanta Points</th>
@@ -86,6 +113,16 @@ export function CampaignManagementPage({
 
               return (
               <tr key={`${campaign.campaignNumber}-${index}`}>
+                <td className="campaign-current-cell">
+                  <input
+                    aria-label={`Set campaign ${campaign.campaignNumber} as current`}
+                    checked={campaign.currentCampaign === true}
+                    className="campaign-current-radio"
+                    type="radio"
+                    name="currentCampaign"
+                    onChange={() => setCurrentCampaign(index)}
+                  />
+                </td>
                 <td>
                   <input
                     className="campaign-no-input"

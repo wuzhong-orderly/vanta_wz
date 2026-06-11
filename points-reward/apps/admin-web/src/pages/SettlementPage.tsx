@@ -27,9 +27,11 @@ type LoadingAction =
   | "save-campaigns"
   | "save-distribution"
   | "save-invites"
+  | "save-settled"
   | "rebuild-settled"
   | "import-csv"
   | "import-invites"
+  | "import-settled"
   | "pull-orderly"
   | "end-campaign";
 
@@ -677,14 +679,24 @@ export function SettlementPage({
             </tbody>
           </table>
         </div>
-        <button
-          className="primary-button save-data-button"
-          disabled={isSavingDistribution}
-          onClick={onSaveData}
-        >
-          {isSavingDistribution ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
-          {isSavingDistribution ? "Saving" : "Save data"}
-        </button>
+        <div className="table-footer-row">
+          <button
+            className="primary-button save-data-button"
+            disabled={isSavingDistribution}
+            onClick={onSaveData}
+          >
+            {isSavingDistribution ? <span className="spinner button-spinner" aria-hidden="true" /> : <Save size={17} />}
+            {isSavingDistribution ? "Saving" : "Save data"}
+          </button>
+          <button className="secondary-button" disabled={loadingAction === "end-campaign"} onClick={onEndCampaign}>
+            {loadingAction === "end-campaign" ? (
+              <span className="spinner button-spinner" aria-hidden="true" />
+            ) : (
+              <Flag size={17} />
+            )}
+            {loadingAction === "end-campaign" ? "Ending" : "End campaign"}
+          </button>
+        </div>
         <Pagination
           page={campaignDataPage}
           total={filteredCampaignDataRows.length}

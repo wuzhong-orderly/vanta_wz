@@ -21,6 +21,6 @@ export const tabs: Array<{ id: Tab; label: string }> = [
   { id: "campaigns", label: "Campaign Management" },
   { id: "settlement", label: "Point Management" },
   { id: "distribution", label: "CSV Point management" },
-  { id: "current", label: "Settled points" },
+  { id: "current", label: "Settled Point & Special Point Management" },
   { id: "invites", label: "Invite Management" }
 ];

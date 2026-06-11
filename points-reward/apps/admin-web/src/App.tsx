@@ -11,6 +11,7 @@ import {
   rebuildSettledPointsFromCampaigns,
   saveDistribution,
   saveInviteCodes,
+  saveSettledPoints,
   saveRegistry
 } from "./api";
 import { tabs } from "./constants";
@@ -37,9 +38,11 @@ type BusyAction =
   | "save-campaigns"
   | "save-distribution"
   | "save-invites"
+  | "save-settled"
   | "rebuild-settled"
   | "import-csv"
   | "import-invites"
+  | "import-settled"
   | "pull-orderly"
   | "end-campaign";
 
@@ -76,10 +79,11 @@ export function App() {
         getInviteCodes()
       ]);
 
-      setRegistry(registryResponse);
+      const normalizedRegistry = normalizeCurrentCampaign(registryResponse);
+      setRegistry(normalizedRegistry);
       setSettledRows(settledResponse.rows);
       setInviteRows(inviteResponse.rows);
-      setSelectedCampaignNumber(registryResponse.currentCampaignNumber);
+      setSelectedCampaignNumber(normalizedRegistry.currentCampaignNumber);
       setMessage("Data loaded");
       setStatus("Idle");
     } catch (error) {
@@ -109,11 +113,19 @@ export function App() {
 
   async function saveCampaigns() {
     if (!registry) return;
+    const normalizedRegistry = normalizeCurrentCampaign(registry);
+    const validationMessage = validateCurrentCampaign(normalizedRegistry);
+
+    if (validationMessage) {
+      setStatus("Error");
+      setMessage(validationMessage);
+      return;
+    }
 
     try {
       setStatus("Loading");
       setBusyAction("save-campaigns");
-      const next = await saveRegistry(registry);
+      const next = await saveRegistry(syncCurrentCampaignNumber(normalizedRegistry));
       const settled = await rebuildSettledPointsFromCampaigns();
       setRegistry(next);
       setSettledRows(settled.rows);
@@ -193,6 +205,22 @@ export function App() {
     }
   }
 
+  async function saveSettledTable() {
+    try {
+      setStatus("Loading");
+      setBusyAction("save-settled");
+      const response = await saveSettledPoints(settledRows);
+      setSettledRows(response.rows);
+      setStatus("Saved");
+      setMessage(`Settled and special points CSV saved with ${response.rows.length} rows`);
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   function addCampaign() {
     if (!registry) return;
 
@@ -210,7 +238,8 @@ export function App() {
       status: "DRAFT",
       orderlyBrokerId: "vanta_exchange",
       orderlyStageId: "",
-      orderlyEpochId: ""
+      orderlyEpochId: "",
+      currentCampaign: false
     };
 
     setRegistry({
@@ -268,6 +297,42 @@ export function App() {
     }
   }
 
+  async function importSettledCsv(file: File) {
+    try {
+      setStatus("Loading");
+      setBusyAction("import-settled");
+      setMessage(`Importing ${file.name}...`);
+      const text = await file.text();
+      const currentRowsByAddress = new Map(
+        settledRows
+          .filter((row) => row.address.trim())
+          .map((row) => [row.address.trim().toLowerCase(), row] as const)
+      );
+      const importedRows = parseCsv(text)
+        .map((row) => {
+          const address = row.address ?? "";
+          const existingRow = currentRowsByAddress.get(address.trim().toLowerCase());
+
+          return {
+            address,
+            settledPoints: existingRow?.settledPoints ?? "0",
+            specialPoints: row.special_points ?? row.specialpoints ?? "0",
+            remark: row.remark ?? ""
+          } satisfies SettledPointsRow;
+        })
+        .filter((row) => row.address.trim());
+
+      setSettledRows(importedRows);
+      setStatus("Idle");
+      setMessage(`Imported ${file.name}; settled_points were preserved by address`);
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   function patchSelectedCampaign(patch: Partial<CampaignConfig>) {
     if (!registry || !selectedCampaignNumber) return;
 
@@ -292,11 +357,19 @@ export function App() {
           : campaign
       )
     };
+    const normalizedRegistry = normalizeCurrentCampaign(nextRegistry);
+    const validationMessage = validateCurrentCampaign(normalizedRegistry);
+
+    if (validationMessage) {
+      setStatus("Error");
+      setMessage(validationMessage);
+      return;
+    }
 
     try {
       setStatus("Loading");
       setBusyAction("save-campaigns");
-      const next = await saveRegistry(nextRegistry);
+      const next = await saveRegistry(syncCurrentCampaignNumber(normalizedRegistry));
       const settled = await rebuildSettledPointsFromCampaigns();
       setRegistry(next);
       setSettledRows(settled.rows);
@@ -398,7 +471,16 @@ export function App() {
           ) : null}
 
           {activeTab === "current" ? (
-            <CurrentPointsPage rows={settledRows} />
+            <CurrentPointsPage
+              rows={settledRows}
+              onChange={setSettledRows}
+              onImport={(file) => void importSettledCsv(file)}
+              onRebuild={() => void rebuildSettledTableFromCampaigns()}
+              onSave={() => void saveSettledTable()}
+              isImporting={busyAction === "import-settled"}
+              isRebuilding={busyAction === "rebuild-settled"}
+              isSaving={busyAction === "save-settled"}
+            />
           ) : null}
 
           {activeTab === "distribution" && registry ? (
@@ -491,4 +573,46 @@ export function App() {
       setBusyAction(null);
     }
   }
+}
+
+function validateCurrentCampaign(registry: CampaignRegistry) {
+  const currentCampaignCount = registry.campaigns.filter(
+    (campaign) => campaign.currentCampaign === true
+  ).length;
+
+  if (currentCampaignCount !== 1) {
+    return `Exactly one campaign must be set as current. Current selection count: ${currentCampaignCount}.`;
+  }
+
+  return "";
+}
+
+function normalizeCurrentCampaign(registry: CampaignRegistry): CampaignRegistry {
+  const hasCurrentCampaignFlag = registry.campaigns.some(
+    (campaign) => campaign.currentCampaign === true
+  );
+  const campaigns = registry.campaigns.map((campaign) => ({
+    ...campaign,
+    currentCampaign: hasCurrentCampaignFlag
+      ? campaign.currentCampaign === true
+      : campaign.campaignNumber === registry.currentCampaignNumber
+  }));
+  const currentCampaign = campaigns.find((campaign) => campaign.currentCampaign === true);
+
+  return {
+    ...registry,
+    currentCampaignNumber: currentCampaign?.campaignNumber ?? registry.currentCampaignNumber,
+    campaigns
+  };
+}
+
+function syncCurrentCampaignNumber(registry: CampaignRegistry): CampaignRegistry {
+  const currentCampaign = registry.campaigns.find(
+    (campaign) => campaign.currentCampaign === true
+  );
+
+  return {
+    ...registry,
+    currentCampaignNumber: currentCampaign?.campaignNumber ?? registry.currentCampaignNumber
+  };
 }

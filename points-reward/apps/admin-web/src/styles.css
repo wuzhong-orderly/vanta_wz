@@ -433,6 +433,17 @@ td input {
   min-width: 1500px;
 }
 
+.campaign-management-table .campaign-current-cell {
+  text-align: center;
+}
+
+.campaign-management-table .campaign-current-radio {
+  cursor: pointer;
+  min-height: 16px;
+  min-width: 16px;
+  width: 16px;
+}
+
 .campaign-management-table .campaign-no-input {
   min-width: 48px;
   width: 48px;
@@ -687,6 +698,12 @@ td input {
   border: 1px solid #dfe4ea;
   border-radius: 8px;
   padding: 9px 10px;
+}
+
+.inline-message.error {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
 }
 
 .mono {
