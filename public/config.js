@@ -38,7 +38,8 @@ window.__RUNTIME_CONFIG__ = {
   "VITE_CUSTOM_PNL_POSTER_COUNT": "3",
   "VITE_TRADING_VIEW_COLOR_CONFIG": "{\"upColor\":\"#0FB276\",\"downColor\":\"#F5464B\",\"pnlUpColor\":\"#0FB276\",\"pnlDownColor\":\"#F5464B\"}",
   "VITE_ANALYTICS_SCRIPT": "",
-  "VITE_POINTS_API_BASE_URL": "http://localhost:4100",
+  // "VITE_POINTS_API_BASE_URL": "http://localhost:4001",
+  "VITE_POINTS_API_BASE_URL": "https://vantawz-production.up.railway.app",
   "VITE_SYMBOL_LIST": "",
   "VITE_RESTRICTED_REGIONS": "China, United States",
   "VITE_WHITELISTED_IPS": ""
