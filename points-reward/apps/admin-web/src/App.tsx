@@ -4,11 +4,13 @@ import {
   endCampaign,
   getCurrentPoints,
   getDistribution,
+  getInviteCodes,
   getOrderlyStages,
   getRegistry,
   importOrderlyRows,
   rebuildCurrentPointsFromCampaigns,
   saveDistribution,
+  saveInviteCodes,
   saveRegistry
 } from "./api";
 import { Metric } from "./components/Metric";
@@ -17,12 +19,14 @@ import { parseCsv } from "./csv";
 import { CampaignManagementPage } from "./pages/CampaignManagementPage";
 import { CurrentPointsPage } from "./pages/CurrentPointsPage";
 import { DistributionPage } from "./pages/DistributionPage";
+import { InviteManagementPage } from "./pages/InviteManagementPage";
 import { SettlementPage } from "./pages/SettlementPage";
 import type {
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
   CurrentPointsRow,
+  InviteCodeRow,
   Tab
 } from "./types";
 import { formatNumber, getErrorMessage, numberValue } from "./utils";
@@ -33,8 +37,10 @@ type BusyAction =
   | "load-distribution"
   | "save-campaigns"
   | "save-distribution"
+  | "save-invites"
   | "rebuild-current"
   | "import-csv"
+  | "import-invites"
   | "pull-orderly"
   | "end-campaign";
 
@@ -46,6 +52,7 @@ export function App() {
   const [registry, setRegistry] = useState<CampaignRegistry | null>(null);
   const [currentRows, setCurrentRows] = useState<CurrentPointsRow[]>([]);
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
+  const [inviteRows, setInviteRows] = useState<InviteCodeRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
 
   useEffect(() => {
@@ -96,13 +103,15 @@ export function App() {
     try {
       setStatus("Loading");
       setBusyAction("load-all");
-      const [registryResponse, currentResponse] = await Promise.all([
+      const [registryResponse, currentResponse, inviteResponse] = await Promise.all([
         getRegistry(),
-        getCurrentPoints()
+        getCurrentPoints(),
+        getInviteCodes()
       ]);
 
       setRegistry(registryResponse);
       setCurrentRows(currentResponse.rows);
+      setInviteRows(inviteResponse.rows);
       setSelectedCampaignNumber(registryResponse.currentCampaignNumber);
       setMessage("Data loaded");
       setStatus("Idle");
@@ -201,6 +210,22 @@ export function App() {
     }
   }
 
+  async function saveInviteTable() {
+    try {
+      setStatus("Loading");
+      setBusyAction("save-invites");
+      const response = await saveInviteCodes(inviteRows);
+      setInviteRows(response.rows);
+      setStatus("Saved");
+      setMessage(`Invite CSV saved with ${response.rows.length} codes`);
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   function addCampaign() {
     if (!registry) return;
 
@@ -242,6 +267,29 @@ export function App() {
           vantaPoints: row.vanta_points ?? "",
           specialPoints: row.special_points ?? "",
           remark: row.remark ?? ""
+        }))
+      );
+      setStatus("Idle");
+      setMessage(`Imported ${file.name}`);
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function importInviteCsv(file: File) {
+    try {
+      setStatus("Loading");
+      setBusyAction("import-invites");
+      setMessage(`Importing ${file.name}...`);
+      const text = await file.text();
+      setInviteRows(
+        parseCsv(text).map((row) => ({
+          inviteCode: (row["邀请码"] ?? row.invite_code ?? row.invitecode ?? "").toUpperCase(),
+          boundAddress: row["绑定地址"] ?? row.bound_address ?? row.boundaddress ?? "",
+          boundAt: row["绑定时间"] ?? row.bound_at ?? row.boundat ?? ""
         }))
       );
       setStatus("Idle");
@@ -400,6 +448,17 @@ export function App() {
               isLoading={busyAction === "load-distribution"}
               isImporting={busyAction === "import-csv"}
               isSaving={busyAction === "save-distribution"}
+            />
+          ) : null}
+
+          {activeTab === "invites" ? (
+            <InviteManagementPage
+              rows={inviteRows}
+              onChange={setInviteRows}
+              onImport={(file) => void importInviteCsv(file)}
+              onSave={() => void saveInviteTable()}
+              isImporting={busyAction === "import-invites"}
+              isSaving={busyAction === "save-invites"}
             />
           ) : null}
 

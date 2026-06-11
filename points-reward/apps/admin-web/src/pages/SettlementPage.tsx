@@ -26,8 +26,10 @@ type LoadingAction =
   | "load-distribution"
   | "save-campaigns"
   | "save-distribution"
+  | "save-invites"
   | "rebuild-current"
   | "import-csv"
+  | "import-invites"
   | "pull-orderly"
   | "end-campaign";
 

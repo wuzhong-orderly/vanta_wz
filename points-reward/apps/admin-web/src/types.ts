@@ -1,4 +1,4 @@
-export type Tab = "campaigns" | "settlement" | "current" | "distribution";
+export type Tab = "campaigns" | "settlement" | "current" | "distribution" | "invites";
 
 export interface CampaignConfig {
   campaignNumber: number;
@@ -80,4 +80,10 @@ export interface LeaderboardRow {
   totalPoint: string;
   totalSpecialPoint: string;
   remark: string;
+}
+
+export interface InviteCodeRow {
+  inviteCode: string;
+  boundAddress: string;
+  boundAt: string;
 }

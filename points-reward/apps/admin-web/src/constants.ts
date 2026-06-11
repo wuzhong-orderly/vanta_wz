@@ -18,9 +18,12 @@ export const distributionHeaders = [
   "remark"
 ];
 
+export const inviteHeaders = ["邀请码", "绑定地址", "绑定时间"];
+
 export const tabs: Array<{ id: Tab; label: string }> = [
   { id: "campaigns", label: "Campaign Management" },
   { id: "settlement", label: "Point Management" },
   { id: "distribution", label: "CSV Point management" },
-  { id: "current", label: "Total points ranking" }
+  { id: "current", label: "Total points ranking" },
+  { id: "invites", label: "Invite Management" }
 ];

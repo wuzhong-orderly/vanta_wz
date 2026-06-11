@@ -3,6 +3,7 @@ import type {
   CampaignDistributionRow,
   CampaignRegistry,
   CurrentPointsRow,
+  InviteCodeRow,
   LeaderboardRow,
   OrderlyEpoch,
   OrderlyStage
@@ -35,6 +36,17 @@ export async function getCurrentPoints() {
 
 export async function saveCurrentPoints(rows: CurrentPointsRow[]) {
   return request<{ rows: CurrentPointsRow[] }>("/admin/current-points", {
+    method: "PUT",
+    body: JSON.stringify({ rows })
+  });
+}
+
+export async function getInviteCodes() {
+  return request<{ rows: InviteCodeRow[] }>("/admin/invite-codes");
+}
+
+export async function saveInviteCodes(rows: InviteCodeRow[]) {
+  return request<{ rows: InviteCodeRow[] }>("/admin/invite-codes", {
     method: "PUT",
     body: JSON.stringify({ rows })
   });

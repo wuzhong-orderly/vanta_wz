@@ -14,6 +14,7 @@ import {
   saveCurrentPointsRows,
   saveRegistry
 } from "../lib/campaign-store.js";
+import { getInviteCodeRows, saveInviteCodeRows } from "../lib/invite-store.js";
 
 const campaignSchema = z.object({
   campaignNumber: z.number().int().positive(),
@@ -55,6 +56,12 @@ const distributionRowSchema = z.object({
   remark: z.string()
 });
 
+const inviteCodeRowSchema = z.object({
+  inviteCode: z.string(),
+  boundAddress: z.string(),
+  boundAt: z.string()
+});
+
 const importOrderlySchema = z.object({
   mode: z.enum(["stage-ranking", "epoch-ranking", "leaderboard", "rankings"]).optional(),
   stage: z.string().optional(),
@@ -78,6 +85,18 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.get("/admin/current-points", async () => ({
     rows: await getCurrentPointsRows()
   }));
+
+  app.get("/admin/invite-codes", async () => ({
+    rows: await getInviteCodeRows()
+  }));
+
+  app.put("/admin/invite-codes", async (request) => {
+    const { rows } = z.object({ rows: z.array(inviteCodeRowSchema) }).parse(request.body);
+
+    return {
+      rows: await saveInviteCodeRows(rows)
+    };
+  });
 
   app.put("/admin/current-points", async (request) => {
     const { rows } = z.object({ rows: z.array(currentPointsRowSchema) }).parse(request.body);

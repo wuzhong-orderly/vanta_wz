@@ -52,3 +52,16 @@ export interface UserPointsResponse {
 export interface LeaderboardRow extends UserPointsResponse {
   rank: number;
 }
+
+export interface InviteCodeRow {
+  inviteCode: string;
+  boundAddress: string;
+  boundAt: string;
+}
+
+export interface InviteBindingResponse {
+  bound: boolean;
+  address: string;
+  inviteCode?: string;
+  boundAt?: string;
+}
