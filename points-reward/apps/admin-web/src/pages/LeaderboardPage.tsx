@@ -19,7 +19,6 @@ export function LeaderboardPage({ rows }: { rows: LeaderboardRow[] }) {
               <th>Address</th>
               <th>Total Point</th>
               <th>Current Point</th>
-              <th>Remark</th>
             </tr>
           </thead>
           <tbody>
@@ -29,7 +28,6 @@ export function LeaderboardPage({ rows }: { rows: LeaderboardRow[] }) {
                 <td className="mono">{row.address}</td>
                 <td>{row.totalPoint}</td>
                 <td>{row.currentPoint}</td>
-                <td>{row.remark}</td>
               </tr>
             ))}
           </tbody>

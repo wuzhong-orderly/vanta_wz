@@ -48,6 +48,22 @@ export interface LeaderboardRow extends UserPointsResponse {
   rank: number;
 }
 
+export interface CampaignPointsRow {
+  campaignNumber: number;
+  campaignName: string;
+  status?: CampaignConfig["status"];
+  startTime: string;
+  endTime: string;
+  points: string;
+}
+
+export interface CampaignLeaderboardRow {
+  rank: number;
+  address: string;
+  campaignNumber: number;
+  points: string;
+}
+
 export interface InviteCodeRow {
   inviteCode: string;
   boundAddress: string;

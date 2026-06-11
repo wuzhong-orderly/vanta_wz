@@ -88,7 +88,7 @@ export function SettlementPage({
   const [epochs, setEpochs] = useState<OrderlyEpoch[]>([]);
   const [metadataMessage, setMetadataMessage] = useState("");
   const [orderlyRows, setOrderlyRows] = useState<CampaignDistributionRow[]>([]);
-  const [keepCurrentAllocation, setKeepCurrentAllocation] = useState(false);
+  const [recalculateAllocationFromOrderly, setRecalculateAllocationFromOrderly] = useState(false);
   const [orderlyQuery, setOrderlyQuery] = useState("");
   const [orderlyPage, setOrderlyPage] = useState(1);
   const [campaignDataQuery, setCampaignDataQuery] = useState("");
@@ -106,7 +106,7 @@ export function SettlementPage({
     setEpochs([]);
     setMetadataMessage("");
     setOrderlyRows([]);
-    setKeepCurrentAllocation(false);
+    setRecalculateAllocationFromOrderly(false);
     setOrderlyQuery("");
     setOrderlyPage(1);
     setCampaignDataQuery("");
@@ -246,9 +246,9 @@ export function SettlementPage({
     }
 
     onRowsChange(
-      keepCurrentAllocation
-        ? mergedRows
-        : recalculateAllocation(mergedRows, campaign?.totalVantaPoints)
+      recalculateAllocationFromOrderly
+        ? recalculateAllocation(mergedRows, campaign?.totalVantaPoints)
+        : mergedRows
     );
   }
 
@@ -352,14 +352,14 @@ export function SettlementPage({
             />
           </label>
           <label>
-            Start time
+            Start time (UTC)
             <input
               value={campaign?.startTime ?? ""}
               onChange={(event) => onCampaignPatch({ startTime: event.target.value })}
             />
           </label>
           <label>
-            End time
+            End time (UTC)
             <input
               value={campaign?.endTime ?? ""}
               onChange={(event) => onCampaignPatch({ endTime: event.target.value })}
@@ -545,11 +545,11 @@ export function SettlementPage({
           <div className="table-footer-row">
             <label className="checkbox-label">
               <input
-                checked={keepCurrentAllocation}
+                checked={recalculateAllocationFromOrderly}
                 type="checkbox"
-                onChange={(event) => setKeepCurrentAllocation(event.target.checked)}
+                onChange={(event) => setRecalculateAllocationFromOrderly(event.target.checked)}
               />
-              Keep current allocation
+              Re-calculate point allocation base on Orderly Points
             </label>
             <Pagination
               page={orderlyPage}

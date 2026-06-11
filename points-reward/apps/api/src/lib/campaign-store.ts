@@ -2,8 +2,10 @@ import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import type {
+  CampaignLeaderboardRow,
   CampaignConfig,
   CampaignDistributionRow,
+  CampaignPointsRow,
   CampaignRegistry,
   LeaderboardRow,
   SettledPointsRow,
@@ -101,26 +103,7 @@ export async function getCurrentCampaign() {
 }
 
 export async function getLatestCampaignForDisplay() {
-  const registry = await readRegistry();
-  const now = Date.now();
-
-  const eligibleCampaigns = registry.campaigns.filter((campaign) => {
-    if (
-      campaign.status !== "ACTIVE" &&
-      campaign.status !== "ENDED" &&
-      campaign.status !== "SETTLED"
-    ) {
-      return false;
-    }
-
-    const startTime = Date.parse(campaign.startTime);
-
-    if (!Number.isFinite(startTime)) {
-      return false;
-    }
-
-    return startTime <= now;
-  });
+  const eligibleCampaigns = await getCampaignsForDisplay();
 
   if (eligibleCampaigns.length === 0) {
     return null;
@@ -138,6 +121,27 @@ export async function getLatestCampaignForDisplay() {
   });
 
   return eligibleCampaigns[0];
+}
+
+export async function getCampaignsForDisplay() {
+  const registry = await readRegistry();
+  const now = Date.now();
+
+  return registry.campaigns
+    .filter((campaign) => {
+      if (
+        campaign.status !== "ACTIVE" &&
+        campaign.status !== "ENDED" &&
+        campaign.status !== "SETTLED"
+      ) {
+        return false;
+      }
+
+      const startTime = Date.parse(campaign.startTime);
+
+      return Number.isFinite(startTime) && startTime <= now;
+    })
+    .sort((left, right) => left.campaignNumber - right.campaignNumber);
 }
 
 export async function getRegistry(): Promise<CampaignRegistry> {
@@ -311,7 +315,9 @@ export async function getOrderlyStages(brokerId: string) {
   });
 }
 
-export async function getOrderlyEpochs(_stage?: string) {
+export async function getOrderlyEpochs(stage?: string) {
+  void stage;
+
   const url = new URL(
     "/v1/public/points/epoch_dates",
     process.env.ORDERLY_API_BASE_URL ?? "https://api.orderly.org"
@@ -411,6 +417,50 @@ export async function getTotalPointLeaderboard(): Promise<LeaderboardRow[]> {
       );
     })
     .sort((left, right) => Number(right.totalPoint) - Number(left.totalPoint))
+    .map((row, index) => ({
+      ...row,
+      rank: index + 1
+    }));
+}
+
+export async function getUserCampaignPoints(address: string): Promise<CampaignPointsRow[]> {
+  const normalizedAddress = normalizeAddress(address);
+  const campaigns = await getCampaignsForDisplay();
+
+  return Promise.all(
+    campaigns.map(async (campaign) => {
+      const rows = await getCampaignDistributionRows(campaign);
+      const row = rows.find(
+        (item) => normalizeAddress(item.address) === normalizedAddress
+      );
+
+      return {
+        campaignNumber: campaign.campaignNumber,
+        campaignName: campaign.campaignName,
+        status: campaign.status,
+        startTime: campaign.startTime,
+        endTime: campaign.endTime,
+        points: normalizeNumber(row?.vantaPoints ?? "0")
+      };
+    })
+  );
+}
+
+export async function getCampaignPointLeaderboard(
+  campaignNumber: number
+): Promise<CampaignLeaderboardRow[]> {
+  const registry = await readRegistry();
+  const campaign = getCampaignByNumber(registry, campaignNumber);
+  const rows = await getCampaignDistributionRows(campaign);
+
+  return rows
+    .filter((row) => normalizeAddress(row.address))
+    .map((row) => ({
+      address: row.address,
+      campaignNumber,
+      points: normalizeNumber(row.vantaPoints)
+    }))
+    .sort((left, right) => Number(right.points) - Number(left.points))
     .map((row, index) => ({
       ...row,
       rank: index + 1
@@ -806,17 +856,6 @@ function toUserPointsResponse(row: SettledPointsRow, currentPointValue = "0"): U
   };
 }
 
-function toEmptyUserPointsResponse(address: string): UserPointsResponse {
-  return {
-    address,
-    settledPoints: "0",
-    specialPoints: "0",
-    currentPoint: "0",
-    totalPoint: "0",
-    remark: ""
-  };
-}
-
 function parseCsv(csv: string): Record<string, string>[] {
   const rows = parseCsvRows(csv).filter((row) => row.some((cell) => cell.trim() !== ""));
 
@@ -951,10 +990,6 @@ function stringValue(value: unknown) {
   }
 
   return String(value);
-}
-
-async function readDataFile(relativePath: string) {
-  return (await readDataFileSnapshot(relativePath)).content;
 }
 
 async function readDataFileSnapshot(relativePath: string): Promise<DataFileSnapshot> {

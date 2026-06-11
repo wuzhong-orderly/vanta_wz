@@ -72,8 +72,8 @@ export function CampaignManagementPage({
               <th>No.</th>
               <th>Name</th>
               <th>Total Vanta Points</th>
-              <th>Start Time</th>
-              <th>End Time</th>
+              <th>Start Time (UTC)</th>
+              <th>End Time (UTC)</th>
               <th>Description</th>
               <th>Status</th>
               <th>Distribution CSV</th>

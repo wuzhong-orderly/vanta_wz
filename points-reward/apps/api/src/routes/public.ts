@@ -1,8 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import {
+  getCampaignPointLeaderboard,
+  getCampaignsForDisplay,
   getCurrentCampaign,
   getLatestCampaignForDisplay,
   getTotalPointLeaderboard,
+  getUserCampaignPoints,
   getUserPoints
 } from "../lib/campaign-store.js";
 import { bindInviteCode, getInviteBinding } from "../lib/invite-store.js";
@@ -20,14 +23,41 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     campaign: await getLatestCampaignForDisplay()
   }));
 
+  app.get("/api/campaigns", async () => ({
+    items: await getCampaignsForDisplay()
+  }));
+
   app.get("/api/points/:address", async (request) => {
     const { address } = request.params as { address: string };
     return getUserPoints(address);
   });
 
+  app.get("/api/points/:address/campaigns", async (request) => {
+    const { address } = request.params as { address: string };
+    return {
+      items: await getUserCampaignPoints(address)
+    };
+  });
+
   app.get("/api/leaderboard/total", async () => ({
     items: await getTotalPointLeaderboard()
   }));
+
+  app.get("/api/leaderboard/campaign/:campaignNumber", async (request, reply) => {
+    const { campaignNumber } = request.params as { campaignNumber: string };
+    const parsedCampaignNumber = Number(campaignNumber);
+
+    if (!Number.isInteger(parsedCampaignNumber) || parsedCampaignNumber <= 0) {
+      reply.code(400);
+      return {
+        error: "Invalid campaign number."
+      };
+    }
+
+    return {
+      items: await getCampaignPointLeaderboard(parsedCampaignNumber)
+    };
+  });
 
   app.get("/api/invite-bindings/:address", async (request) => {
     const { address } = request.params as { address: string };

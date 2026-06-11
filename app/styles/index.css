@@ -96,6 +96,52 @@
   stroke: rgb(0, 228, 171);
 }
 
+.affiliate-special-points-wrap {
+  padding: 24px 16px 0;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .affiliate-special-points-wrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+.affiliate-special-points {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgb(var(--oui-color-base-contrast));
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+[data-oui-theme="light"] .affiliate-special-points {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.affiliate-special-points span,
+.affiliate-special-points small {
+  color: rgba(var(--oui-color-base-contrast), 0.62);
+}
+
+.affiliate-special-points span {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.affiliate-special-points strong {
+  display: block;
+  font-size: 28px;
+  line-height: 1;
+}
+
 /* Theme toggle button */
 .theme-toggle-btn {
   display: flex;

@@ -14,6 +14,7 @@
 .points-header,
 .points-lookup,
 .points-user-panel,
+.points-total-banner,
 .points-leaderboard {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -23,9 +24,41 @@
 [data-oui-theme="light"] .points-header,
 [data-oui-theme="light"] .points-lookup,
 [data-oui-theme="light"] .points-user-panel,
+[data-oui-theme="light"] .points-total-banner,
 [data-oui-theme="light"] .points-leaderboard {
   background: rgba(255, 255, 255, 0.82);
   border-color: rgba(0, 0, 0, 0.08);
+}
+
+.points-total-banner {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
+}
+
+.points-total-banner span {
+  color: rgba(var(--oui-color-base-contrast), 0.62);
+  display: block;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+.points-total-banner strong {
+  display: block;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.points-total-banner-meta {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.points-total-banner-meta span {
+  margin: 0;
 }
 
 .points-header {
@@ -183,7 +216,7 @@
 .points-summary-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .points-metric {
@@ -216,6 +249,30 @@
 
 .points-metric small {
   font-size: 12px;
+}
+
+.points-select {
+  appearance: none;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgb(var(--oui-color-base-contrast));
+  cursor: pointer;
+  font: inherit;
+  min-height: 38px;
+  min-width: 190px;
+  outline: 0;
+  padding: 0 34px 0 12px;
+}
+
+[data-oui-theme="light"] .points-select {
+  background: rgba(0, 0, 0, 0.035);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.points-metric-select {
+  min-width: 0;
+  width: 100%;
 }
 
 .points-user-panel {
@@ -349,11 +406,13 @@
   .points-header,
   .points-lookup,
   .points-user-panel,
+  .points-total-banner,
   .points-section-title {
     grid-template-columns: 1fr;
   }
 
   .points-header,
+  .points-total-banner,
   .points-section-title {
     align-items: flex-start;
     display: grid;
@@ -363,6 +422,10 @@
   .points-user-breakdown,
   .points-podium {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .points-select {
+    width: 100%;
   }
 }
 

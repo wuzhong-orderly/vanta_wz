@@ -6,10 +6,7 @@ import {
   CalendarDays,
   Medal,
   RefreshCw,
-  Search,
-  Sparkles,
-  Trophy,
-  Wallet
+  Trophy
 } from "lucide-react";
 import { generatePageTitle } from "@/utils/utils";
 import { getPageMeta } from "@/utils/seo";
@@ -40,6 +37,24 @@ type LeaderboardRow = UserPointsResponse & {
   rank: number;
 };
 
+type CampaignPointsRow = {
+  campaignNumber: number;
+  campaignName: string;
+  status?: CampaignConfig["status"];
+  startTime: string;
+  endTime: string;
+  points: string;
+};
+
+type CampaignLeaderboardRow = {
+  rank: number;
+  address: string;
+  campaignNumber: number;
+  points: string;
+};
+
+type DisplayLeaderboardRow = LeaderboardRow | CampaignLeaderboardRow;
+type LeaderboardMode = "total" | `campaign-${number}`;
 type LoadState = "idle" | "loading" | "error";
 
 const POINTS_API_BASE_URL =
@@ -54,17 +69,24 @@ export default function PointsIndex() {
   const connectedAddress = account.address ?? "";
 
   const [campaign, setCampaign] = useState<CampaignConfig | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignConfig[]>([]);
+  const [leaderboard, setLeaderboard] = useState<DisplayLeaderboardRow[]>([]);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>("total");
   const [userPoints, setUserPoints] = useState<UserPointsResponse | null>(null);
-  const [addressInput, setAddressInput] = useState("");
+  const [campaignPoints, setCampaignPoints] = useState<CampaignPointsRow[]>([]);
+  const [pastPointsMode, setPastPointsMode] = useState<"total" | `campaign-${number}`>("total");
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState("");
 
-  const lookupAddress = addressInput.trim() || connectedAddress;
+  const lookupAddress = connectedAddress;
 
   useEffect(() => {
     void loadPageData(connectedAddress);
   }, [connectedAddress]);
+
+  useEffect(() => {
+    void loadLeaderboard(leaderboardMode);
+  }, [leaderboardMode]);
 
   const topThree = useMemo(() => leaderboard.slice(0, 3), [leaderboard]);
   const tableRows = useMemo(() => leaderboard.slice(0, 100), [leaderboard]);
@@ -79,24 +101,45 @@ export default function PointsIndex() {
       )?.rank ?? null
     );
   }, [leaderboard, lookupAddress]);
+  const selectedPastPoints = useMemo(() => {
+    if (pastPointsMode === "total") {
+      return userPoints?.settledPoints ?? "0";
+    }
+
+    const campaignNumber = Number(pastPointsMode.replace("campaign-", ""));
+    return (
+      campaignPoints.find((row) => row.campaignNumber === campaignNumber)?.points ?? "0"
+    );
+  }, [campaignPoints, pastPointsMode, userPoints?.settledPoints]);
+  const isCampaignLeaderboard = leaderboardMode !== "total";
 
   async function loadPageData(address = lookupAddress) {
     try {
       setLoadState("loading");
       setError("");
 
-      const [campaignResponse, leaderboardResponse] = await Promise.all([
+      const [campaignResponse, campaignsResponse, leaderboardResponse] = await Promise.all([
         fetchJson<{ campaign: CampaignConfig | null }>("/points-api/campaign/latest"),
+        fetchJson<{ items: CampaignConfig[] }>("/points-api/campaigns"),
         fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
       ]);
 
       setCampaign(campaignResponse.campaign);
+      setCampaigns(campaignsResponse.items);
       setLeaderboard(leaderboardResponse.items);
+      setLeaderboardMode("total");
 
       if (address) {
-        setUserPoints(await fetchJson<UserPointsResponse>(`/points-api/points/${address}`));
+        const [nextUserPoints, nextCampaignPoints] = await Promise.all([
+          fetchJson<UserPointsResponse>(`/points-api/points/${address}`),
+          fetchJson<{ items: CampaignPointsRow[] }>(`/points-api/points/${address}/campaigns`)
+        ]);
+
+        setUserPoints(nextUserPoints);
+        setCampaignPoints(nextCampaignPoints.items);
       } else {
         setUserPoints(null);
+        setCampaignPoints([]);
       }
 
       setLoadState("idle");
@@ -110,23 +153,26 @@ export default function PointsIndex() {
     }
   }
 
-  async function lookupUser() {
-    if (!lookupAddress) {
-      setUserPoints(null);
-      return;
-    }
-
+  async function loadLeaderboard(mode: LeaderboardMode) {
     try {
       setLoadState("loading");
       setError("");
-      setUserPoints(await fetchJson<UserPointsResponse>(`/points-api/points/${lookupAddress}`));
+
+      const response =
+        mode === "total"
+          ? await fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
+          : await fetchJson<{ items: CampaignLeaderboardRow[] }>(
+              `/points-api/leaderboard/campaign/${mode.replace("campaign-", "")}`
+            );
+
+      setLeaderboard(response.items);
       setLoadState("idle");
     } catch (nextError) {
       setLoadState("error");
       setError(
         nextError instanceof Error
           ? nextError.message
-          : t("points.errors.loadUserPoints", "Failed to load user points")
+          : t("points.errors.loadPoints", "Failed to load points")
       );
     }
   }
@@ -135,12 +181,29 @@ export default function PointsIndex() {
     <>
       {renderSEOTags(pageMeta, pageTitle)}
       <div className="points-page">
+        <section className="points-total-banner">
+          <div>
+            <span>{t("points.myTotalPoints", "My Total Points")}</span>
+            <strong>{formatPoints(userPoints?.totalPoint ?? "0", locale)}</strong>
+          </div>
+          <div className="points-total-banner-meta">
+            <span>
+              {userRank
+                ? `${t("points.rank", "Rank")} #${userRank}`
+                : t("points.noRankYet", "No rank yet")}
+            </span>
+            <button
+              className="points-icon-button"
+              onClick={() => void loadPageData()}
+              title={t("points.refresh", "Refresh points")}
+            >
+              <RefreshCw size={18} />
+            </button>
+          </div>
+        </section>
+
         <section className="points-header">
           <div>
-            <div className="points-eyebrow">
-              <Sparkles size={16} />
-              {t("points.eyebrow", "Vanta Genesis Points")}
-            </div>
             <h1>{campaign?.campaignName ?? t("points.fallbackCampaign", "Points Campaign")}</h1>
             <div className="points-campaign-meta">
               <span className={`points-status-badge ${statusClassName(campaign?.status)}`}>
@@ -149,7 +212,7 @@ export default function PointsIndex() {
               </span>
               <span>
                 <Trophy size={16} />
-                {t("points.currentPointPool", "Current Point Pool")}{" "}
+                {t("points.totalPointsPool", "Total Points Pool")}{" "}
                 {formatPoints(campaign?.totalVantaPoints ?? "0", locale)}
               </span>
               <span>
@@ -179,13 +242,9 @@ export default function PointsIndex() {
 
         <section className="points-summary-grid">
           <PointMetric
-            label={t("points.totalPoints", "Total Points")}
-            value={userPoints?.totalPoint ?? "0"}
-            subLabel={
-              userRank
-                ? `${t("points.rank", "Rank")} #${userRank}`
-                : t("points.noRankYet", "No rank yet")
-            }
+            label={t("points.totalPointsPool", "Total Points Pool")}
+            value={campaign?.totalVantaPoints ?? "0"}
+            subLabel={t("points.campaignPool", "Campaign pool")}
             locale={locale}
           />
           <PointMetric
@@ -194,31 +253,44 @@ export default function PointsIndex() {
             subLabel={t("points.vantaPoints", "Vanta points")}
             locale={locale}
           />
-          <PointMetric
-            label={t("points.pastCampaigns", "Past Campaigns")}
-            value={userPoints?.settledPoints ?? "0"}
-            subLabel={t("points.accumulated", "Accumulated")}
+          <PointMetricWithSelect
+            label={t("points.pastCampaigns", "My Past Points")}
+            value={selectedPastPoints}
             locale={locale}
-          />
-          <PointMetric
-            label={t("points.specialPoints", "Special Points")}
-            value={userPoints?.specialPoints ?? "0"}
-            subLabel={t("points.settled", "Settled")}
-            locale={locale}
+            selectLabel={t("points.selectPastPoints", "Select past points")}
+            valueMode={pastPointsMode}
+            onChange={(value) => setPastPointsMode(value)}
+            options={[
+              {
+                value: "total",
+                label: t("points.totalPastPoints", "Total Past Points")
+              },
+              ...campaignPoints.map((row) => ({
+                value: `campaign-${row.campaignNumber}` as const,
+                label: `Campaign ${row.campaignNumber}`
+              }))
+            ]}
           />
         </section>
 
         <section className="points-leaderboard">
           <div className="points-section-title">
             <div>
-              <h2>{t("points.totalPointsLeaderboard", "Total Points Leaderboard")}</h2>
-              <p>
-                {t(
-                  "points.leaderboardDescription",
-                  "Ranked by past plus current Vanta points."
-                )}
-              </p>
+              <h2>{leaderboardTitle(leaderboardMode)}</h2>
             </div>
+            <select
+              aria-label={t("points.selectLeaderboard", "Select leaderboard")}
+              className="points-select"
+              onChange={(event) => setLeaderboardMode(event.target.value as LeaderboardMode)}
+              value={leaderboardMode}
+            >
+              <option value="total">{t("points.totalPointsLeaderboard", "Total Points Leaderboard")}</option>
+              {campaigns.map((item) => (
+                <option key={item.campaignNumber} value={`campaign-${item.campaignNumber}`}>
+                  {`Campaign ${item.campaignNumber} Leaderboard`}
+                </option>
+              ))}
+            </select>
             <span>
               {loadState === "loading"
                 ? t("common.loading", "Loading")
@@ -231,7 +303,7 @@ export default function PointsIndex() {
               <div className="points-podium-item" key={row.address}>
                 <Medal size={22} />
                 <span>#{row.rank}</span>
-                <strong>{formatPoints(row.totalPoint, locale)}</strong>
+                <strong>{formatPoints(getLeaderboardPoints(row), locale)}</strong>
                 <small>{formatAddress(row.address)}</small>
               </div>
             ))}
@@ -243,8 +315,14 @@ export default function PointsIndex() {
                 <tr>
                   <th>{t("points.rank", "Rank")}</th>
                   <th>{t("points.address", "Address")}</th>
-                  <th>{t("points.totalPoints", "Total Points")}</th>
-                  <th>{t("points.current", "Current")}</th>
+                  <th>
+                    {isCampaignLeaderboard
+                      ? t("points.points", "Points")
+                      : t("points.totalPoints", "Total Points")}
+                  </th>
+                  {!isCampaignLeaderboard ? (
+                    <th>{t("points.current", "Current Points")}</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -260,8 +338,10 @@ export default function PointsIndex() {
                   >
                     <td>#{row.rank}</td>
                     <td>{formatAddress(row.address)}</td>
-                    <td>{formatPoints(row.totalPoint, locale)}</td>
-                    <td>{formatPoints(row.currentPoint, locale)}</td>
+                    <td>{formatPoints(getLeaderboardPoints(row), locale)}</td>
+                    {!isCampaignLeaderboard ? (
+                      <td>{formatPoints((row as LeaderboardRow).currentPoint, locale)}</td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -289,6 +369,46 @@ function PointMetric({
       <span>{label}</span>
       <strong>{formatPoints(value, locale)}</strong>
       <small>{subLabel}</small>
+    </div>
+  );
+}
+
+function PointMetricWithSelect({
+  label,
+  value,
+  locale,
+  selectLabel,
+  valueMode,
+  onChange,
+  options
+}: {
+  label: string;
+  value: string;
+  locale: string;
+  selectLabel: string;
+  valueMode: "total" | `campaign-${number}`;
+  onChange: (value: "total" | `campaign-${number}`) => void;
+  options: Array<{
+    value: "total" | `campaign-${number}`;
+    label: string;
+  }>;
+}) {
+  return (
+    <div className="points-metric">
+      <span>{label}</span>
+      <strong>{formatPoints(value, locale)}</strong>
+      <select
+        aria-label={selectLabel}
+        className="points-select points-metric-select"
+        onChange={(event) => onChange(event.target.value as "total" | `campaign-${number}`)}
+        value={valueMode}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -325,7 +445,8 @@ function formatPoints(value: string, locale = "en") {
   }
 
   return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 4
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1
   }).format(number);
 }
 
@@ -343,12 +464,31 @@ function formatAddress(address: string) {
 
 function formatDateRange(startTime: string, endTime: string, locale = "en") {
   const formatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
   });
 
-  return `${formatter.format(new Date(startTime))} - ${formatter.format(new Date(endTime))}`;
+  return `${formatter.format(new Date(startTime))} UTC+0 - ${formatter.format(
+    new Date(endTime)
+  )} UTC+0`;
+}
+
+function getLeaderboardPoints(row: DisplayLeaderboardRow) {
+  return "points" in row ? row.points : row.totalPoint;
+}
+
+function leaderboardTitle(mode: LeaderboardMode) {
+  if (mode === "total") {
+    return "Total Points Leaderboard";
+  }
+
+  return `Campaign ${mode.replace("campaign-", "")} Leaderboard`;
 }
 
 function formatCampaignStatus(status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED") {

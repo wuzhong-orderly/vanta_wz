@@ -1,5 +1,6 @@
 {
   "currentCampaignNumber": 1,
+  "settledPointsCsv": "settled-points.csv",
   "campaigns": [
     {
       "campaignNumber": 1,
@@ -28,7 +29,7 @@
     {
       "campaignNumber": 3,
       "campaignName": "Vanta Points Campaign 3",
-      "totalVantaPoints": "0",
+      "totalVantaPoints": "1000",
       "startTime": "2026-05-28T17:13:07.044Z",
       "endTime": "2026-05-28T17:13:07.044Z",
       "distributionCsv": "campaign-3-distribution.csv",
@@ -49,6 +50,5 @@
       "orderlyStageId": "",
       "orderlyEpochId": ""
     }
-  ],
-  "settledPointsCsv": "settled-points.csv"
+  ]
 }
