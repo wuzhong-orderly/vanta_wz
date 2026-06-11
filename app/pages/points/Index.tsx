@@ -275,7 +275,7 @@ export default function PointsIndex() {
               },
               ...campaignPoints.map((row) => ({
                 value: `campaign-${row.campaignNumber}` as const,
-                label: `Campaign ${row.campaignNumber}`
+                label: getCampaignDisplayName(row)
               }))
             ]}
           />
@@ -292,7 +292,7 @@ export default function PointsIndex() {
               <option value="total">{t("points.totalPointsLeaderboard", "Total Points Leaderboard")}</option>
               {campaigns.map((item) => (
                 <option key={item.campaignNumber} value={`campaign-${item.campaignNumber}`}>
-                  {`Campaign ${item.campaignNumber} Leaderboard`}
+                  {`${getCampaignDisplayName(item)} Leaderboard`}
                 </option>
               ))}
             </select>
@@ -483,6 +483,10 @@ function formatDateRange(startTime: string, endTime: string, locale = "en") {
 
 function getLeaderboardPoints(row: DisplayLeaderboardRow) {
   return "points" in row ? row.points : row.totalPoint;
+}
+
+function getCampaignDisplayName(campaign: Pick<CampaignConfig, "campaignName" | "campaignNumber">) {
+  return campaign.campaignName.trim() || `Campaign ${campaign.campaignNumber}`;
 }
 
 function formatCampaignStatus(status?: "DRAFT" | "ACTIVE" | "ENDED" | "SETTLED") {
