@@ -131,7 +131,7 @@ export function App() {
       setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign config saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
+        `Campaign config saved and settled-points rebuilt from ${settled.stats.campaignsRead} non-draft campaigns`
       );
     } catch (error) {
       setStatus("Error");
@@ -143,7 +143,7 @@ export function App() {
 
   async function rebuildSettledTableFromCampaigns() {
     const confirmed = window.confirm(
-      "Rebuild settled-points.csv from settled campaign distribution CSVs? This overwrites settled_points and preserves special_points and remarks by address."
+      "Rebuild settled-points.csv from campaign distribution CSVs? This recalculates settled_points from settled campaigns and total_points from non-draft campaigns, while preserving special_points and remarks by address."
     );
 
     if (!confirmed) {
@@ -157,7 +157,7 @@ export function App() {
       setSettledRows(response.rows);
       setStatus("Saved");
       setMessage(
-        `Rebuilt settled-points.csv from ${response.stats.campaignsRead} settled campaign CSVs`
+        `Rebuilt settled-points.csv from ${response.stats.campaignsRead} non-draft campaign CSVs`
       );
     } catch (error) {
       setStatus("Error");
@@ -179,7 +179,7 @@ export function App() {
       setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign distribution saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
+        `Campaign distribution saved and settled-points rebuilt from ${settled.stats.campaignsRead} non-draft campaigns`
       );
     } catch (error) {
       setStatus("Error");
@@ -210,9 +210,12 @@ export function App() {
       setStatus("Loading");
       setBusyAction("save-settled");
       const response = await saveSettledPoints(settledRows);
-      setSettledRows(response.rows);
+      const settled = await rebuildSettledPointsFromCampaigns();
+      setSettledRows(settled.rows);
       setStatus("Saved");
-      setMessage(`Settled and special points CSV saved with ${response.rows.length} rows`);
+      setMessage(
+        `Special points saved for ${response.rows.length} rows; settled and total points recalculated`
+      );
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -316,6 +319,7 @@ export function App() {
           return {
             address,
             settledPoints: existingRow?.settledPoints ?? "0",
+            totalPoints: existingRow?.totalPoints ?? "0",
             specialPoints: row.special_points ?? row.specialpoints ?? "0",
             remark: row.remark ?? ""
           } satisfies SettledPointsRow;
@@ -324,7 +328,7 @@ export function App() {
 
       setSettledRows(importedRows);
       setStatus("Idle");
-      setMessage(`Imported ${file.name}; settled_points were preserved by address`);
+      setMessage(`Imported ${file.name}; settled_points and total_points were preserved by address`);
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -375,7 +379,7 @@ export function App() {
       setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign status saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
+        `Campaign status saved and settled-points rebuilt from ${settled.stats.campaignsRead} non-draft campaigns`
       );
     } catch (error) {
       setStatus("Error");

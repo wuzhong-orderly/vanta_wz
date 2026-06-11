@@ -3,6 +3,7 @@ import type { Tab } from "./types";
 export const settledHeaders = [
   "address",
   "settled_points",
+  "total_points",
   "special_points",
   "remark"
 ];

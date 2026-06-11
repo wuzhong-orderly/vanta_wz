@@ -9,11 +9,11 @@
       "startTime": "2026-05-01T00:00:00.000Z",
       "endTime": "2026-05-31T23:59:59.000Z",
       "distributionCsv": "campaign-1-distribution.csv",
-      "status": "ACTIVE",
+      "currentCampaign": true,
+      "status": "ENDED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": "",
-      "currentCampaign": true
+      "orderlyEpochId": ""
     },
     {
       "campaignNumber": 2,
@@ -22,11 +22,11 @@
       "startTime": "2026-06-01T17:12:28.561Z",
       "endTime": "2026-06-30T17:12:28.564Z",
       "distributionCsv": "campaign-2-distribution.csv",
+      "currentCampaign": false,
       "status": "SETTLED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": "",
-      "currentCampaign": false
+      "orderlyEpochId": ""
     },
     {
       "campaignNumber": 3,
@@ -35,24 +35,24 @@
       "startTime": "2026-05-28T17:13:07.044Z",
       "endTime": "2026-05-28T17:13:07.044Z",
       "distributionCsv": "campaign-3-distribution.csv",
+      "currentCampaign": false,
       "status": "SETTLED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": "",
-      "currentCampaign": false
+      "orderlyEpochId": ""
     },
     {
       "campaignNumber": 4,
       "campaignName": "Vanta Points Campaign temp",
-      "totalVantaPoints": "0",
+      "totalVantaPoints": "20",
       "startTime": "2026-05-31T15:41:04.159Z",
       "endTime": "2026-05-31T15:41:04.159Z",
       "distributionCsv": "campaign-4-distribution.csv",
-      "status": "DRAFT",
+      "currentCampaign": false,
+      "status": "ENDED",
       "orderlyBrokerId": "vanta_exchange",
       "orderlyStageId": "",
-      "orderlyEpochId": "",
-      "currentCampaign": false
+      "orderlyEpochId": ""
     }
   ]
 }

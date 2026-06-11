@@ -24,6 +24,7 @@ const campaignSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   distributionCsv: z.string(),
+  currentCampaign: z.boolean().optional(),
   status: z.enum(["DRAFT", "ACTIVE", "ENDED", "SETTLED"]).optional(),
   orderlyBrokerId: z.string().optional(),
   orderlyStageId: z.string().optional(),
@@ -41,6 +42,7 @@ const registrySchema = z.object({
 const settledPointsRowSchema = z.object({
   address: z.string(),
   settledPoints: z.string(),
+  totalPoints: z.string().default("0"),
   specialPoints: z.string(),
   remark: z.string()
 });
@@ -97,9 +99,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   app.put("/admin/settled-points", async (request) => {
     const { rows } = z.object({ rows: z.array(settledPointsRowSchema) }).parse(request.body);
-    return {
-      rows: await saveSettledPointsRows(rows)
-    };
+    await saveSettledPointsRows(rows);
+    return rebuildSettledPointsFromCampaigns();
   });
 
   app.post("/admin/settled-points/rebuild-from-campaigns", async () =>

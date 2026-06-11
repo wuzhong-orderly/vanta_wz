@@ -58,6 +58,7 @@ const registrySchema = z.object({
 const settledPointsHeaderMap: Record<keyof SettledPointsRow, string> = {
   address: "address",
   settledPoints: "settled_points",
+  totalPoints: "total_points",
   specialPoints: "special_points",
   remark: "remark"
 };
@@ -183,8 +184,9 @@ export async function saveSettledPointsRows(rows: SettledPointsRow[]) {
     settledPointsHeaders,
     rows.map((row) => ({
       [settledPointsHeaderMap.address]: row.address,
-      [settledPointsHeaderMap.settledPoints]: row.settledPoints,
-      [settledPointsHeaderMap.specialPoints]: row.specialPoints,
+      [settledPointsHeaderMap.settledPoints]: normalizeNumber(row.settledPoints ?? "0"),
+      [settledPointsHeaderMap.totalPoints]: normalizeNumber(row.totalPoints ?? "0"),
+      [settledPointsHeaderMap.specialPoints]: normalizeNumber(row.specialPoints ?? "0"),
       [settledPointsHeaderMap.remark]: row.remark
     }))
   );
@@ -208,17 +210,19 @@ export async function rebuildSettledPointsFromCampaigns() {
     rowsByAddress.set(normalizedAddress, {
       address: row.address,
       settledPoints: "0",
+      totalPoints: "0",
       specialPoints: normalizeNumber(row.specialPoints),
       remark: row.remark
     });
   }
 
   for (const campaign of registry.campaigns) {
-    const isPastCampaign = campaign.status
+    const isSettledCampaign = campaign.status
       ? campaign.status === "SETTLED"
       : campaign.campaignNumber < registry.currentCampaignNumber;
+    const countsTowardTotal = campaign.status ? campaign.status !== "DRAFT" : true;
 
-    if (!isPastCampaign) {
+    if (!isSettledCampaign && !countsTowardTotal) {
       continue;
     }
 
@@ -237,21 +241,26 @@ export async function rebuildSettledPointsFromCampaigns() {
         ({
           address: distributionRow.address,
           settledPoints: "0",
+          totalPoints: "0",
           specialPoints: "0",
           remark: ""
         } satisfies SettledPointsRow);
+      const vantaPoints = normalizeNumber(distributionRow.vantaPoints);
 
-      row.settledPoints = addDecimalStrings(
-        row.settledPoints,
-        normalizeNumber(distributionRow.vantaPoints)
-      );
+      if (isSettledCampaign) {
+        row.settledPoints = addDecimalStrings(row.settledPoints, vantaPoints);
+      }
+
+      if (countsTowardTotal) {
+        row.totalPoints = addDecimalStrings(row.totalPoints, vantaPoints);
+      }
 
       rowsByAddress.set(normalizedAddress, row);
     }
   }
 
   const rows = Array.from(rowsByAddress.values()).sort(
-    (left, right) => Number(right.settledPoints) - Number(left.settledPoints)
+    (left, right) => Number(right.totalPoints) - Number(left.totalPoints)
   );
 
   await saveSettledPointsRows(rows);
@@ -261,8 +270,8 @@ export async function rebuildSettledPointsFromCampaigns() {
     stats: {
       campaignsRead: registry.campaigns.filter((campaign) =>
         campaign.status
-          ? campaign.status === "SETTLED"
-          : campaign.campaignNumber < registry.currentCampaignNumber
+          ? campaign.status !== "DRAFT"
+          : true
       ).length,
       userCount: rows.length
     }
@@ -406,6 +415,7 @@ export async function getUserPoints(address: string): Promise<UserPointsResponse
     row ?? {
       address,
       settledPoints: "0",
+      totalPoints: "0",
       specialPoints: "0",
       remark: ""
     },
@@ -429,6 +439,7 @@ export async function getTotalPointLeaderboard(): Promise<LeaderboardRow[]> {
         settledRow ?? {
           address: currentRow?.address ?? address,
           settledPoints: "0",
+          totalPoints: currentRow?.vantaPoints ?? "0",
           specialPoints: "0",
           remark: ""
         },
@@ -817,6 +828,14 @@ async function readSettledPointsSnapshot(): Promise<SettledPointsCache> {
       settledPointsHeaderMap.settledPoints,
       "total_accumulated_point_in_past_campaign"
     ),
+    totalPoints: getCsvValue(
+      row,
+      settledPointsHeaderMap.totalPoints,
+      "total_point",
+      "total_points",
+      settledPointsHeaderMap.settledPoints,
+      "total_accumulated_point_in_past_campaign"
+    ),
     specialPoints: getCsvValue(
       row,
       settledPointsHeaderMap.specialPoints,
@@ -862,6 +881,7 @@ async function getCurrentCampaignPointsByAddress() {
 
 function toUserPointsResponse(row: SettledPointsRow, currentPointValue = "0"): UserPointsResponse {
   const settledPoints = normalizeNumber(row.settledPoints);
+  const totalPoints = normalizeNumber(row.totalPoints);
   const specialPoints = normalizeNumber(row.specialPoints);
   const currentPoint = normalizeNumber(currentPointValue);
 
@@ -870,7 +890,7 @@ function toUserPointsResponse(row: SettledPointsRow, currentPointValue = "0"): U
     settledPoints,
     specialPoints,
     currentPoint,
-    totalPoint: addDecimalStrings(settledPoints, currentPoint),
+    totalPoint: totalPoints,
     remark: row.remark
   };
 }

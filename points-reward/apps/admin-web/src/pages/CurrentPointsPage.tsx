@@ -73,6 +73,7 @@ export function CurrentPointsPage({
           {
             address: "",
             settledPoints: "0",
+            totalPoints: "0",
             specialPoints: "0",
             remark: ""
           }
@@ -87,6 +88,7 @@ export function CurrentPointsPage({
             rows.map((row) => ({
               address: row.address,
               settled_points: row.settledPoints,
+              total_points: row.totalPoints,
               special_points: row.specialPoints,
               remark: row.remark
             }))
@@ -128,6 +130,9 @@ function SettledPointTableRow({
       </td>
       <td>
         <input aria-label="settled_points" readOnly value={row.settledPoints} />
+      </td>
+      <td>
+        <input aria-label="total_points" readOnly value={row.totalPoints} />
       </td>
       <td>
         <input

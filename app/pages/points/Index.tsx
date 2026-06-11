@@ -104,14 +104,14 @@ export default function PointsIndex() {
   }, [leaderboard, lookupAddress]);
   const selectedPastPoints = useMemo(() => {
     if (pastPointsMode === "total") {
-      return userPoints?.settledPoints ?? "0";
+      return userPoints?.totalPoint ?? "0";
     }
 
     const campaignNumber = Number(pastPointsMode.replace("campaign-", ""));
     return (
       campaignPoints.find((row) => row.campaignNumber === campaignNumber)?.points ?? "0"
     );
-  }, [campaignPoints, pastPointsMode, userPoints?.settledPoints]);
+  }, [campaignPoints, pastPointsMode, userPoints?.totalPoint]);
   const isCampaignLeaderboard = leaderboardMode !== "total";
 
   async function loadPageData(address = lookupAddress) {
@@ -119,16 +119,24 @@ export default function PointsIndex() {
       setLoadState("loading");
       setError("");
 
-      const [campaignResponse, campaignsResponse, leaderboardResponse] = await Promise.all([
+      const [campaignResponse, campaignsResponse] = await Promise.all([
         fetchJson<{ campaign: CampaignConfig | null }>("/points-api/campaign/current"),
-        fetchJson<{ items: CampaignConfig[] }>("/points-api/campaigns"),
-        fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
+        fetchJson<{ items: CampaignConfig[] }>("/points-api/campaigns")
       ]);
+      const defaultLeaderboardMode = campaignResponse.campaign
+        ? (`campaign-${campaignResponse.campaign.campaignNumber}` as const)
+        : "total";
+      const leaderboardResponse =
+        defaultLeaderboardMode === "total"
+          ? await fetchJson<{ items: LeaderboardRow[] }>("/points-api/leaderboard/total")
+          : await fetchJson<{ items: CampaignLeaderboardRow[] }>(
+              `/points-api/leaderboard/campaign/${campaignResponse.campaign?.campaignNumber}`
+            );
 
       setCampaign(campaignResponse.campaign);
       setCampaigns(campaignsResponse.items);
       setLeaderboard(leaderboardResponse.items);
-      setLeaderboardMode("total");
+      setLeaderboardMode(defaultLeaderboardMode);
 
       if (address) {
         const [nextUserPoints, nextCampaignPoints] = await Promise.all([
@@ -249,7 +257,7 @@ export default function PointsIndex() {
             locale={locale}
           />
           <PointMetric
-            label={t("points.currentCampaign", "My Current Points")}
+            label={t("points.currentCampaign", "My Point in Current Campaign")}
             value={userPoints?.currentPoint ?? "0"}
             subLabel={t("points.vantaPoints", "Vanta points")}
             locale={locale}
@@ -263,7 +271,7 @@ export default function PointsIndex() {
             options={[
               {
                 value: "total",
-                label: t("points.totalPoints", "Total Points")
+                label: t("points.accumulatedVantaPoints", "Accumulated Vanta Points")
               },
               ...campaignPoints.map((row) => ({
                 value: `campaign-${row.campaignNumber}` as const,

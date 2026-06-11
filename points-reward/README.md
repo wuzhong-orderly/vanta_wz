@@ -15,7 +15,7 @@ Independent CSV-backed reward service for Vanta points campaign data.
 
 - `data/campaigns.json`: Campaign config registry and current campaign pointer.
 - `data/campaign-<number>-distribution.csv`: One CSV per campaign distribution.
-- `data/settled-points.csv`: Settled points, special points, and remarks by address.
+- `data/settled-points.csv`: Settled points, total points, special points, and remarks by address.
 
 Campaign config schema:
 
@@ -44,7 +44,7 @@ address,orderly_point,allocation_percentage,vanta_points,remark
 Settled points CSV columns:
 
 ```csv
-address,settled_points,special_points,remark
+address,settled_points,total_points,special_points,remark
 ```
 
 ## API
@@ -94,7 +94,7 @@ The admin UI can rebuild `settled-points.csv` from settled campaign distribution
 Rules:
 
 - Settled campaigns are accumulated into `settled_points`.
-- Active or ended campaign points are calculated dynamically from campaign distribution CSVs.
+- All non-draft campaigns are accumulated into `total_points`.
 - Normal points come from `vanta_points`.
 - Existing `special_points` and remarks in `settled-points.csv` are preserved by address.
 

@@ -26,6 +26,7 @@ export interface CampaignRegistry {
 export interface SettledPointsRow {
   address: string;
   settledPoints: string;
+  totalPoints: string;
   specialPoints: string;
   remark: string;
 }
