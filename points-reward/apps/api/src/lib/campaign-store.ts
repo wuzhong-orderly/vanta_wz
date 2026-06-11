@@ -5,14 +5,15 @@ import type {
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
-  CurrentPointsRow,
   LeaderboardRow,
+  SettledPointsRow,
   UserPointsResponse
 } from "@points-reward/shared";
 
 const registrySchema = z.object({
   currentCampaignNumber: z.number().int().positive(),
-  currentPointsCsv: z.string().min(1),
+  settledPointsCsv: z.string().min(1).optional(),
+  currentPointsCsv: z.string().min(1).optional(),
   campaigns: z
     .array(
       z.object({
@@ -32,16 +33,16 @@ const registrySchema = z.object({
       })
     )
     .min(1)
-});
+}).transform((registry) => ({
+  currentCampaignNumber: registry.currentCampaignNumber,
+  settledPointsCsv: registry.settledPointsCsv ?? registry.currentPointsCsv ?? "settled-points.csv",
+  campaigns: registry.campaigns
+}));
 
-const currentPointsHeaderMap: Record<keyof CurrentPointsRow, string> = {
+const settledPointsHeaderMap: Record<keyof SettledPointsRow, string> = {
   address: "address",
-  totalAccumulatedPointInPastCampaign: "total_accumulated_point_in_past_campaign",
-  totalAccumulatedPointInCurrentCampaign: "total_accumulated_point_in_current_campaign",
-  totalAccumulatedSpecialPointInPastCampaign:
-    "total_accumulated_special_point_in_past_campaign",
-  totalAccumulatedSpecialPointInCurrentCampaign:
-    "total_accumulated_special_point_in_current_campaign",
+  settledPoints: "settled_points",
+  specialPoints: "special_points",
   remark: "remark"
 };
 
@@ -50,11 +51,10 @@ const distributionHeaderMap: Record<keyof CampaignDistributionRow, string> = {
   orderlyPoints: "orderly_point",
   allocationPercentage: "allocation_percentage",
   vantaPoints: "vanta_points",
-  specialPoints: "special_points",
   remark: "remark"
 };
 
-const currentPointsHeaders = Object.values(currentPointsHeaderMap);
+const settledPointsHeaders = Object.values(settledPointsHeaderMap);
 const distributionHeaders = Object.values(distributionHeaderMap);
 
 type DataFileSnapshot = {
@@ -63,10 +63,10 @@ type DataFileSnapshot = {
   size: number;
 };
 
-type CurrentPointsCache = {
+type SettledPointsCache = {
   file: DataFileSnapshot;
-  rows: CurrentPointsRow[];
-  rowsByAddress: Map<string, CurrentPointsRow>;
+  rows: SettledPointsRow[];
+  rowsByAddress: Map<string, SettledPointsRow>;
   leaderboard?: LeaderboardRow[];
 };
 
@@ -78,7 +78,7 @@ let registryCache:
       registry: CampaignRegistry;
     }
   | undefined;
-let currentPointsCache: CurrentPointsCache | undefined;
+let settledPointsCache: SettledPointsCache | undefined;
 const distributionRowsCache = new Map<
   string,
   {
@@ -150,52 +150,56 @@ export async function saveRegistry(registry: CampaignRegistry) {
   return parsed;
 }
 
-export async function getCurrentPointsRows(): Promise<CurrentPointsRow[]> {
-  return readCurrentPointsRows();
+export async function getSettledPointsRows(): Promise<SettledPointsRow[]> {
+  return readSettledPointsRows();
 }
 
-export async function saveCurrentPointsRows(rows: CurrentPointsRow[]) {
+export async function saveSettledPointsRows(rows: SettledPointsRow[]) {
   const registry = await readRegistry();
   const csv = stringifyCsv(
-    currentPointsHeaders,
+    settledPointsHeaders,
     rows.map((row) => ({
-      [currentPointsHeaderMap.address]: row.address,
-      [currentPointsHeaderMap.totalAccumulatedPointInPastCampaign]:
-        row.totalAccumulatedPointInPastCampaign,
-      [currentPointsHeaderMap.totalAccumulatedPointInCurrentCampaign]:
-        row.totalAccumulatedPointInCurrentCampaign,
-      [currentPointsHeaderMap.totalAccumulatedSpecialPointInPastCampaign]:
-        row.totalAccumulatedSpecialPointInPastCampaign,
-      [currentPointsHeaderMap.totalAccumulatedSpecialPointInCurrentCampaign]:
-        row.totalAccumulatedSpecialPointInCurrentCampaign,
-      [currentPointsHeaderMap.remark]: row.remark
+      [settledPointsHeaderMap.address]: row.address,
+      [settledPointsHeaderMap.settledPoints]: row.settledPoints,
+      [settledPointsHeaderMap.specialPoints]: row.specialPoints,
+      [settledPointsHeaderMap.remark]: row.remark
     }))
   );
 
-  await writeDataFile(registry.currentPointsCsv, csv);
+  await writeDataFile(registry.settledPointsCsv, csv);
   return rows;
 }
 
-export async function rebuildCurrentPointsFromCampaigns() {
+export async function rebuildSettledPointsFromCampaigns() {
   const registry = await readRegistry();
-  const existingRows = await readCurrentPointsRows();
-  const rowsByAddress = new Map<string, CurrentPointsRow>();
-  const remarksByAddress = new Map(
-    existingRows.map((row) => [normalizeAddress(row.address), row.remark])
-  );
+  const existingRows = await readSettledPointsRows();
+  const rowsByAddress = new Map<string, SettledPointsRow>();
+
+  for (const row of existingRows) {
+    const normalizedAddress = normalizeAddress(row.address);
+
+    if (!normalizedAddress) {
+      continue;
+    }
+
+    rowsByAddress.set(normalizedAddress, {
+      address: row.address,
+      settledPoints: "0",
+      specialPoints: normalizeNumber(row.specialPoints),
+      remark: row.remark
+    });
+  }
 
   for (const campaign of registry.campaigns) {
-    const distributionRows = await getCampaignDistributionRows(campaign);
     const isPastCampaign = campaign.status
       ? campaign.status === "SETTLED"
       : campaign.campaignNumber < registry.currentCampaignNumber;
-    const isCurrentCampaign = campaign.status
-      ? campaign.status === "ACTIVE" || campaign.status === "ENDED"
-      : campaign.campaignNumber === registry.currentCampaignNumber;
 
-    if (!isPastCampaign && !isCurrentCampaign) {
+    if (!isPastCampaign) {
       continue;
     }
+
+    const distributionRows = await getCampaignDistributionRows(campaign);
 
     for (const distributionRow of distributionRows) {
       const normalizedAddress = normalizeAddress(distributionRow.address);
@@ -209,58 +213,33 @@ export async function rebuildCurrentPointsFromCampaigns() {
         existingRow ??
         ({
           address: distributionRow.address,
-          totalAccumulatedPointInPastCampaign: "0",
-          totalAccumulatedPointInCurrentCampaign: "0",
-          totalAccumulatedSpecialPointInPastCampaign: "0",
-          totalAccumulatedSpecialPointInCurrentCampaign: "0",
-          remark: remarksByAddress.get(normalizedAddress) ?? ""
-        } satisfies CurrentPointsRow);
+          settledPoints: "0",
+          specialPoints: "0",
+          remark: ""
+        } satisfies SettledPointsRow);
 
-      if (isPastCampaign) {
-        row.totalAccumulatedPointInPastCampaign = addDecimalStrings(
-          row.totalAccumulatedPointInPastCampaign,
-          normalizeNumber(distributionRow.vantaPoints)
-        );
-        row.totalAccumulatedSpecialPointInPastCampaign = addDecimalStrings(
-          row.totalAccumulatedSpecialPointInPastCampaign,
-          normalizeNumber(distributionRow.specialPoints)
-        );
-      }
-
-      if (isCurrentCampaign) {
-        row.totalAccumulatedPointInCurrentCampaign = addDecimalStrings(
-          row.totalAccumulatedPointInCurrentCampaign,
-          normalizeNumber(distributionRow.vantaPoints)
-        );
-        row.totalAccumulatedSpecialPointInCurrentCampaign = addDecimalStrings(
-          row.totalAccumulatedSpecialPointInCurrentCampaign,
-          normalizeNumber(distributionRow.specialPoints)
-        );
-      }
+      row.settledPoints = addDecimalStrings(
+        row.settledPoints,
+        normalizeNumber(distributionRow.vantaPoints)
+      );
 
       rowsByAddress.set(normalizedAddress, row);
     }
   }
 
   const rows = Array.from(rowsByAddress.values()).sort(
-    (left, right) =>
-      Number(right.totalAccumulatedPointInPastCampaign) +
-      Number(right.totalAccumulatedPointInCurrentCampaign) -
-      (Number(left.totalAccumulatedPointInPastCampaign) +
-        Number(left.totalAccumulatedPointInCurrentCampaign))
+    (left, right) => Number(right.settledPoints) - Number(left.settledPoints)
   );
 
-  await saveCurrentPointsRows(rows);
+  await saveSettledPointsRows(rows);
 
   return {
     rows,
     stats: {
       campaignsRead: registry.campaigns.filter((campaign) =>
         campaign.status
-          ? campaign.status === "ACTIVE" ||
-            campaign.status === "ENDED" ||
-            campaign.status === "SETTLED"
-          : campaign.campaignNumber <= registry.currentCampaignNumber
+          ? campaign.status === "SETTLED"
+          : campaign.campaignNumber < registry.currentCampaignNumber
       ).length,
       userCount: rows.length
     }
@@ -380,43 +359,62 @@ export async function endCampaign(
   };
 
   await saveRegistry(nextRegistry);
-  const currentPoints = await rebuildCurrentPointsFromCampaigns();
+  const settledPoints = await rebuildSettledPointsFromCampaigns();
 
   return {
     preview,
-    currentPoints,
+    settledPoints,
     campaign: nextRegistry.campaigns.find((item) => item.campaignNumber === campaignNumber)
   };
 }
 
 export async function getUserPoints(address: string): Promise<UserPointsResponse> {
   const normalizedAddress = normalizeAddress(address);
-  const { rowsByAddress } = await readCurrentPointsSnapshot();
+  const [{ rowsByAddress }, currentPointsByAddress] = await Promise.all([
+    readSettledPointsSnapshot(),
+    getActiveCampaignPointsByAddress()
+  ]);
   const row = rowsByAddress.get(normalizedAddress);
+  const currentPoint = currentPointsByAddress.get(normalizedAddress)?.vantaPoints ?? "0";
 
-  if (!row) {
-    return toEmptyUserPointsResponse(address);
-  }
-
-  return toUserPointsResponse(row);
+  return toUserPointsResponse(
+    row ?? {
+      address,
+      settledPoints: "0",
+      specialPoints: "0",
+      remark: ""
+    },
+    currentPoint
+  );
 }
 
 export async function getTotalPointLeaderboard(): Promise<LeaderboardRow[]> {
-  const cache = await readCurrentPointsSnapshot();
+  const [{ rowsByAddress }, currentPointsByAddress] = await Promise.all([
+    readSettledPointsSnapshot(),
+    getActiveCampaignPointsByAddress()
+  ]);
+  const addresses = new Set([...rowsByAddress.keys(), ...currentPointsByAddress.keys()]);
 
-  if (cache.leaderboard) {
-    return cache.leaderboard;
-  }
+  return Array.from(addresses)
+    .map((address) => {
+      const settledRow = rowsByAddress.get(address);
+      const currentRow = currentPointsByAddress.get(address);
 
-  cache.leaderboard = cache.rows
-    .map(toUserPointsResponse)
+      return toUserPointsResponse(
+        settledRow ?? {
+          address: currentRow?.address ?? address,
+          settledPoints: "0",
+          specialPoints: "0",
+          remark: ""
+        },
+        currentRow?.vantaPoints ?? "0"
+      );
+    })
     .sort((left, right) => Number(right.totalPoint) - Number(left.totalPoint))
     .map((row, index) => ({
       ...row,
       rank: index + 1
     }));
-
-  return cache.leaderboard;
 }
 
 export async function getCampaignDistributionRows(
@@ -439,7 +437,6 @@ export async function getCampaignDistributionRows(
     orderlyPoints: getCsvValue(row, distributionHeaderMap.orderlyPoints),
     allocationPercentage: getCsvValue(row, distributionHeaderMap.allocationPercentage),
     vantaPoints: getCsvValue(row, distributionHeaderMap.vantaPoints),
-    specialPoints: getCsvValue(row, distributionHeaderMap.specialPoints),
     remark: getCsvValue(row, distributionHeaderMap.remark)
   }));
 
@@ -480,7 +477,6 @@ export async function saveCampaignDistributionRows(
       [distributionHeaderMap.orderlyPoints]: row.orderlyPoints,
       [distributionHeaderMap.allocationPercentage]: row.allocationPercentage,
       [distributionHeaderMap.vantaPoints]: row.vantaPoints,
-      [distributionHeaderMap.specialPoints]: row.specialPoints,
       [distributionHeaderMap.remark]: row.remark
     }))
   );
@@ -523,8 +519,7 @@ function buildAllocationPreview(campaign: CampaignConfig, rows: CampaignDistribu
         ...row,
         orderlyPoints: String(orderlyPoints),
         allocationPercentage: trimDecimal(allocationPercentage),
-        vantaPoints: trimDecimal(vantaPoints),
-        specialPoints: normalizeNumber(row.specialPoints)
+        vantaPoints: trimDecimal(vantaPoints)
       };
     });
 
@@ -536,11 +531,6 @@ function buildAllocationPreview(campaign: CampaignConfig, rows: CampaignDistribu
     (sum, row) => sum + Number(normalizeNumber(row.vantaPoints)),
     0
   );
-  const totalSpecialPoints = allocatedRows.reduce(
-    (sum, row) => sum + Number(normalizeNumber(row.specialPoints)),
-    0
-  );
-
   if (allocatedRows.length === 0) {
     warnings.push("No valid addresses found.");
   }
@@ -555,8 +545,7 @@ function buildAllocationPreview(campaign: CampaignConfig, rows: CampaignDistribu
       userCount: allocatedRows.length,
       totalOrderlyPoints: trimDecimal(totalOrderlyPoints),
       totalAllocationPercentage: trimDecimal(totalAllocationPercentage),
-      totalVantaPoints: trimDecimal(allocatedVantaPoints),
-      totalSpecialPoints: trimDecimal(totalSpecialPoints)
+      totalVantaPoints: trimDecimal(allocatedVantaPoints)
     },
     warnings
   };
@@ -653,7 +642,6 @@ function toDistributionRowFromOrderly(row: Record<string, unknown>): CampaignDis
     ),
     allocationPercentage: "",
     vantaPoints: "0",
-    specialPoints: "0",
     remark: ""
   };
 }
@@ -730,38 +718,32 @@ async function readRegistry(): Promise<CampaignRegistry> {
   return registry;
 }
 
-async function readCurrentPointsRows(): Promise<CurrentPointsRow[]> {
-  const { rows } = await readCurrentPointsSnapshot();
+async function readSettledPointsRows(): Promise<SettledPointsRow[]> {
+  const { rows } = await readSettledPointsSnapshot();
   return rows;
 }
 
-async function readCurrentPointsSnapshot(): Promise<CurrentPointsCache> {
+async function readSettledPointsSnapshot(): Promise<SettledPointsCache> {
   const registry = await readRegistry();
-  const file = await readDataFileSnapshot(registry.currentPointsCsv);
+  const file = await readDataFileSnapshot(registry.settledPointsCsv);
 
-  if (currentPointsCache && isSameSnapshot(currentPointsCache.file, file)) {
-    return currentPointsCache;
+  if (settledPointsCache && isSameSnapshot(settledPointsCache.file, file)) {
+    return settledPointsCache;
   }
 
   const rows = parseCsv(file.content).map((row) => ({
-    address: getCsvValue(row, currentPointsHeaderMap.address),
-    totalAccumulatedPointInPastCampaign: getCsvValue(
+    address: getCsvValue(row, settledPointsHeaderMap.address),
+    settledPoints: getCsvValue(
       row,
-      currentPointsHeaderMap.totalAccumulatedPointInPastCampaign
+      settledPointsHeaderMap.settledPoints,
+      "total_accumulated_point_in_past_campaign"
     ),
-    totalAccumulatedPointInCurrentCampaign: getCsvValue(
+    specialPoints: getCsvValue(
       row,
-      currentPointsHeaderMap.totalAccumulatedPointInCurrentCampaign
+      settledPointsHeaderMap.specialPoints,
+      "total_accumulated_special_point_in_past_campaign"
     ),
-    totalAccumulatedSpecialPointInPastCampaign: getCsvValue(
-      row,
-      currentPointsHeaderMap.totalAccumulatedSpecialPointInPastCampaign
-    ),
-    totalAccumulatedSpecialPointInCurrentCampaign: getCsvValue(
-      row,
-      currentPointsHeaderMap.totalAccumulatedSpecialPointInCurrentCampaign
-    ),
-    remark: getCsvValue(row, currentPointsHeaderMap.remark)
+    remark: getCsvValue(row, settledPointsHeaderMap.remark)
   }));
   const rowsByAddress = new Map(
     rows
@@ -769,31 +751,57 @@ async function readCurrentPointsSnapshot(): Promise<CurrentPointsCache> {
       .filter(([address]) => Boolean(address))
   );
 
-  currentPointsCache = {
+  settledPointsCache = {
     file,
     rows,
     rowsByAddress
   };
 
-  return currentPointsCache;
+  return settledPointsCache;
 }
 
-function toUserPointsResponse(row: CurrentPointsRow): UserPointsResponse {
-  const pastPoint = normalizeNumber(row.totalAccumulatedPointInPastCampaign);
-  const currentPoint = normalizeNumber(row.totalAccumulatedPointInCurrentCampaign);
-  const pastSpecialPoint = normalizeNumber(row.totalAccumulatedSpecialPointInPastCampaign);
-  const currentSpecialPoint = normalizeNumber(
-    row.totalAccumulatedSpecialPointInCurrentCampaign
+async function getActiveCampaignPointsByAddress() {
+  const registry = await readRegistry();
+  const campaigns = registry.campaigns.filter((campaign) =>
+    campaign.status
+      ? campaign.status === "ACTIVE" || campaign.status === "ENDED"
+      : campaign.campaignNumber === registry.currentCampaignNumber
   );
+  const rowsByAddress = new Map<string, { address: string; vantaPoints: string }>();
+
+  for (const campaign of campaigns) {
+    const rows = await getCampaignDistributionRows(campaign);
+
+    for (const row of rows) {
+      const normalizedAddress = normalizeAddress(row.address);
+
+      if (!normalizedAddress) {
+        continue;
+      }
+
+      const existing = rowsByAddress.get(normalizedAddress);
+
+      rowsByAddress.set(normalizedAddress, {
+        address: existing?.address ?? row.address,
+        vantaPoints: addDecimalStrings(existing?.vantaPoints ?? "0", normalizeNumber(row.vantaPoints))
+      });
+    }
+  }
+
+  return rowsByAddress;
+}
+
+function toUserPointsResponse(row: SettledPointsRow, currentPointValue = "0"): UserPointsResponse {
+  const settledPoints = normalizeNumber(row.settledPoints);
+  const specialPoints = normalizeNumber(row.specialPoints);
+  const currentPoint = normalizeNumber(currentPointValue);
 
   return {
     address: row.address,
-    totalAccumulatedPointInPastCampaign: pastPoint,
-    totalAccumulatedSpecialPointInPastCampaign: pastSpecialPoint,
+    settledPoints,
+    specialPoints,
     currentPoint,
-    currentSpecialPoint,
-    totalPoint: addDecimalStrings(pastPoint, currentPoint),
-    totalSpecialPoint: addDecimalStrings(pastSpecialPoint, currentSpecialPoint),
+    totalPoint: addDecimalStrings(settledPoints, currentPoint),
     remark: row.remark
   };
 }
@@ -801,12 +809,10 @@ function toUserPointsResponse(row: CurrentPointsRow): UserPointsResponse {
 function toEmptyUserPointsResponse(address: string): UserPointsResponse {
   return {
     address,
-    totalAccumulatedPointInPastCampaign: "0",
-    totalAccumulatedSpecialPointInPastCampaign: "0",
+    settledPoints: "0",
+    specialPoints: "0",
     currentPoint: "0",
-    currentSpecialPoint: "0",
     totalPoint: "0",
-    totalSpecialPoint: "0",
     remark: ""
   };
 }
@@ -896,8 +902,16 @@ function parseCsvRows(csv: string): string[][] {
   return rows;
 }
 
-function getCsvValue(row: Record<string, string>, header: string) {
-  return row[normalizeHeader(header)] ?? "";
+function getCsvValue(row: Record<string, string>, ...headers: string[]) {
+  for (const header of headers) {
+    const value = row[normalizeHeader(header)];
+
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return "";
 }
 
 function normalizeHeader(header: string) {
@@ -990,7 +1004,7 @@ function invalidateDataCaches(relativePath?: string) {
     registryCache = undefined;
   }
 
-  currentPointsCache = undefined;
+  settledPointsCache = undefined;
 
   if (relativePath) {
     distributionRowsCache.delete(relativePath);

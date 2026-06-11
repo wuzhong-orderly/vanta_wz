@@ -16,7 +16,7 @@ export interface CampaignConfig {
 
 export interface CampaignRegistry {
   currentCampaignNumber: number;
-  currentPointsCsv: string;
+  settledPointsCsv: string;
   campaigns: CampaignConfig[];
 }
 
@@ -25,27 +25,22 @@ export interface CampaignDistributionRow {
   orderlyPoints: string;
   allocationPercentage: string;
   vantaPoints: string;
-  specialPoints: string;
   remark: string;
 }
 
-export interface CurrentPointsRow {
+export interface SettledPointsRow {
   address: string;
-  totalAccumulatedPointInPastCampaign: string;
-  totalAccumulatedPointInCurrentCampaign: string;
-  totalAccumulatedSpecialPointInPastCampaign: string;
-  totalAccumulatedSpecialPointInCurrentCampaign: string;
+  settledPoints: string;
+  specialPoints: string;
   remark: string;
 }
 
 export interface UserPointsResponse {
   address: string;
-  totalAccumulatedPointInPastCampaign: string;
-  totalAccumulatedSpecialPointInPastCampaign: string;
+  settledPoints: string;
+  specialPoints: string;
   currentPoint: string;
-  currentSpecialPoint: string;
   totalPoint: string;
-  totalSpecialPoint: string;
   remark: string;
 }
 

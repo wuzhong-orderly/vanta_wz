@@ -1,52 +1,29 @@
 import { Search, TableProperties } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Pagination, defaultPageSize, paginateRows } from "../components/Pagination";
-import type { CurrentPointsRow } from "../types";
+import type { SettledPointsRow } from "../types";
 import { numberValue } from "../utils";
 
-type CurrentPointSortKey = keyof CurrentPointsRow | "totalPoints";
+type SettledPointSortKey = keyof SettledPointsRow;
 type SortDirection = "asc" | "desc";
 
-const currentPointColumns: Array<{
+const settledPointColumns: Array<{
   header: string;
   id: string;
-  key?: CurrentPointSortKey;
+  key?: SettledPointSortKey;
   numeric?: boolean;
 }> = [
   { header: "ranking", id: "ranking" },
   { header: "address", id: "address", key: "address" },
-  { header: "total_points", id: "totalPoints", key: "totalPoints", numeric: true },
-  {
-    header: "current_campaign_vanta_points",
-    id: "currentPoints",
-    key: "totalAccumulatedPointInCurrentCampaign",
-    numeric: true
-  },
-  {
-    header: "current_campaign_special_points",
-    id: "currentSpecial",
-    key: "totalAccumulatedSpecialPointInCurrentCampaign",
-    numeric: true
-  },
-  {
-    header: "accumulated_settled_campaign_vanta_points",
-    id: "pastPoints",
-    key: "totalAccumulatedPointInPastCampaign",
-    numeric: true
-  },
-  {
-    header: "accumulated_settled_campaign_special_points",
-    id: "pastSpecial",
-    key: "totalAccumulatedSpecialPointInPastCampaign",
-    numeric: true
-  },
+  { header: "settled_points", id: "settledPoints", key: "settledPoints", numeric: true },
+  { header: "special_points", id: "specialPoints", key: "specialPoints", numeric: true },
   { header: "remark", id: "remark", key: "remark" }
 ];
 
-export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
-  const [sort, setSort] = useState<{ direction: SortDirection; key: CurrentPointSortKey }>({
+export function CurrentPointsPage({ rows }: { rows: SettledPointsRow[] }) {
+  const [sort, setSort] = useState<{ direction: SortDirection; key: SettledPointSortKey }>({
     direction: "desc",
-    key: "totalPoints"
+    key: "settledPoints"
   });
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -62,7 +39,7 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
   }, [query, rows]);
 
   const sortedRows = useMemo(() => {
-    const column = currentPointColumns.find((item) => item.key === sort.key);
+    const column = settledPointColumns.find((item) => item.key === sort.key);
 
     return [...filteredRows].sort((left, right) => {
       const result = column?.numeric
@@ -80,7 +57,7 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
     setPage(1);
   }, [query, rows.length]);
 
-  function sortRows(key: CurrentPointSortKey) {
+  function sortRows(key: SettledPointSortKey) {
     setSort((current) => ({
       direction: current.key === key && current.direction === "desc" ? "asc" : "desc",
       key
@@ -92,7 +69,7 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
       <div className="panel-actions">
         <div className="panel-title">
           <TableProperties size={18} />
-          <span>Total points ranking</span>
+          <span>Settled points</span>
           <strong>{rows.length}</strong>
         </div>
         <div className="search table-search">
@@ -108,7 +85,7 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
         <table>
           <thead>
             <tr>
-              {currentPointColumns.map((column) => (
+              {settledPointColumns.map((column) => (
                 <th key={column.id}>
                   <button
                     className="table-sort-button"
@@ -138,11 +115,8 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
               <tr key={`${row.address}-${index}`}>
                 <td>{ranking}</td>
                 <td>{row.address}</td>
-                <td>{getNumericValue(row, "totalPoints")}</td>
-                <td>{row.totalAccumulatedPointInCurrentCampaign}</td>
-                <td>{row.totalAccumulatedSpecialPointInCurrentCampaign}</td>
-                <td>{row.totalAccumulatedPointInPastCampaign}</td>
-                <td>{row.totalAccumulatedSpecialPointInPastCampaign}</td>
+                <td>{row.settledPoints}</td>
+                <td>{row.specialPoints}</td>
                 <td>{row.remark}</td>
               </tr>
             );
@@ -155,23 +129,10 @@ export function CurrentPointsPage({ rows }: { rows: CurrentPointsRow[] }) {
   );
 }
 
-function getNumericValue(row: CurrentPointsRow, key: CurrentPointSortKey) {
-  if (key === "totalPoints") {
-    return (
-      numberValue(row.totalAccumulatedPointInPastCampaign) +
-      numberValue(row.totalAccumulatedPointInCurrentCampaign) +
-      numberValue(row.totalAccumulatedSpecialPointInPastCampaign) +
-      numberValue(row.totalAccumulatedSpecialPointInCurrentCampaign)
-    );
-  }
-
+function getNumericValue(row: SettledPointsRow, key: SettledPointSortKey) {
   return numberValue(row[key]);
 }
 
-function getTextValue(row: CurrentPointsRow, key: CurrentPointSortKey) {
-  if (key === "totalPoints") {
-    return String(getNumericValue(row, key));
-  }
-
+function getTextValue(row: SettledPointsRow, key: SettledPointSortKey) {
   return row[key];
 }

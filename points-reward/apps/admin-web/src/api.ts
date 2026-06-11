@@ -2,9 +2,9 @@ import type {
   AllocationPreview,
   CampaignDistributionRow,
   CampaignRegistry,
-  CurrentPointsRow,
   InviteCodeRow,
   LeaderboardRow,
+  SettledPointsRow,
   OrderlyEpoch,
   OrderlyStage
 } from "./types";
@@ -30,12 +30,12 @@ export async function saveRegistry(registry: CampaignRegistry) {
   });
 }
 
-export async function getCurrentPoints() {
-  return request<{ rows: CurrentPointsRow[] }>("/admin/current-points");
+export async function getSettledPoints() {
+  return request<{ rows: SettledPointsRow[] }>("/admin/settled-points");
 }
 
-export async function saveCurrentPoints(rows: CurrentPointsRow[]) {
-  return request<{ rows: CurrentPointsRow[] }>("/admin/current-points", {
+export async function saveSettledPoints(rows: SettledPointsRow[]) {
+  return request<{ rows: SettledPointsRow[] }>("/admin/settled-points", {
     method: "PUT",
     body: JSON.stringify({ rows })
   });
@@ -52,9 +52,9 @@ export async function saveInviteCodes(rows: InviteCodeRow[]) {
   });
 }
 
-export async function rebuildCurrentPointsFromCampaigns() {
-  return request<{ rows: CurrentPointsRow[]; stats: { campaignsRead: number; userCount: number } }>(
-    "/admin/current-points/rebuild-from-campaigns",
+export async function rebuildSettledPointsFromCampaigns() {
+  return request<{ rows: SettledPointsRow[]; stats: { campaignsRead: number; userCount: number } }>(
+    "/admin/settled-points/rebuild-from-campaigns",
     {
       method: "POST"
     }
@@ -103,7 +103,7 @@ export async function getOrderlyEpochs(stage?: string) {
 export async function endCampaign(campaignNumber: number, rows: CampaignDistributionRow[]) {
   return request<{
     preview: AllocationPreview;
-    currentPoints: { rows: CurrentPointsRow[]; stats: { campaignsRead: number; userCount: number } };
+    settledPoints: { rows: SettledPointsRow[]; stats: { campaignsRead: number; userCount: number } };
     campaign: CampaignRegistry["campaigns"][number];
   }>(`/admin/campaigns/${campaignNumber}/end`, {
     method: "POST",

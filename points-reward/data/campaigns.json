@@ -1,6 +1,5 @@
 {
   "currentCampaignNumber": 1,
-  "currentPointsCsv": "current-points.csv",
   "campaigns": [
     {
       "campaignNumber": 1,
@@ -50,5 +49,6 @@
       "orderlyStageId": "",
       "orderlyEpochId": ""
     }
-  ]
+  ],
+  "settledPointsCsv": "settled-points.csv"
 }

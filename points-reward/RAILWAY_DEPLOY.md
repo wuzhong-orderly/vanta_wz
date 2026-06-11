@@ -33,7 +33,7 @@ ls -la /data
 You should see files like:
 
 - `campaigns.json`
-- `current-points.csv`
+- `settled-points.csv`
 - `campaign-1-distribution.csv`
 
 ## 5) Verify API is up

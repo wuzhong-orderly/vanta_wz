@@ -27,7 +27,7 @@ type LoadingAction =
   | "save-campaigns"
   | "save-distribution"
   | "save-invites"
-  | "rebuild-current"
+  | "rebuild-settled"
   | "import-csv"
   | "import-invites"
   | "pull-orderly"
@@ -38,7 +38,6 @@ const campaignDataColumns: Array<{ key: CampaignDataSortKey; label: string; nume
   { key: "orderlyPoints", label: "Orderly Point", numeric: true },
   { key: "allocationPercentage", label: "Allocation %", numeric: true },
   { key: "vantaPoints", label: "Vanta Points", numeric: true },
-  { key: "specialPoints", label: "Special Points", numeric: true },
   { key: "remark", label: "Remark" }
 ];
 
@@ -239,7 +238,6 @@ export function SettlementPage({
         orderlyPoints: orderlyRow.orderlyPoints,
         allocationPercentage: "",
         vantaPoints: "",
-        specialPoints: "",
         remark: ""
       };
 
@@ -273,7 +271,6 @@ export function SettlementPage({
         orderlyPoints: "0",
         allocationPercentage: "0",
         vantaPoints: "0",
-        specialPoints: "",
         remark: ""
       }
     ]);
@@ -654,14 +651,6 @@ export function SettlementPage({
                       value={row.vantaPoints}
                       onChange={(event) =>
                         patchCampaignDataRow(rowIndex, { vantaPoints: event.target.value })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={row.specialPoints}
-                      onChange={(event) =>
-                        patchCampaignDataRow(rowIndex, { specialPoints: event.target.value })
                       }
                     />
                   </td>

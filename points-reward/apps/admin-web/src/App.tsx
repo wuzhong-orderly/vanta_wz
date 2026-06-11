@@ -1,19 +1,18 @@
 import { RefreshCw, Trophy } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   endCampaign,
-  getCurrentPoints,
   getDistribution,
   getInviteCodes,
   getOrderlyStages,
   getRegistry,
+  getSettledPoints,
   importOrderlyRows,
-  rebuildCurrentPointsFromCampaigns,
+  rebuildSettledPointsFromCampaigns,
   saveDistribution,
   saveInviteCodes,
   saveRegistry
 } from "./api";
-import { Metric } from "./components/Metric";
 import { tabs } from "./constants";
 import { parseCsv } from "./csv";
 import { CampaignManagementPage } from "./pages/CampaignManagementPage";
@@ -25,11 +24,11 @@ import type {
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
-  CurrentPointsRow,
   InviteCodeRow,
+  SettledPointsRow,
   Tab
 } from "./types";
-import { formatNumber, getErrorMessage, numberValue } from "./utils";
+import { getErrorMessage } from "./utils";
 
 type Status = "Idle" | "Loading" | "Saved" | "Error";
 type BusyAction =
@@ -38,7 +37,7 @@ type BusyAction =
   | "save-campaigns"
   | "save-distribution"
   | "save-invites"
-  | "rebuild-current"
+  | "rebuild-settled"
   | "import-csv"
   | "import-invites"
   | "pull-orderly"
@@ -50,7 +49,7 @@ export function App() {
   const [busyAction, setBusyAction] = useState<BusyAction | null>(null);
   const [message, setMessage] = useState("");
   const [registry, setRegistry] = useState<CampaignRegistry | null>(null);
-  const [currentRows, setCurrentRows] = useState<CurrentPointsRow[]>([]);
+  const [settledRows, setSettledRows] = useState<SettledPointsRow[]>([]);
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
   const [inviteRows, setInviteRows] = useState<InviteCodeRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
@@ -65,52 +64,20 @@ export function App() {
     }
   }, [selectedCampaignNumber]);
 
-  const currentCampaign = useMemo(
-    () =>
-      registry?.campaigns.find(
-        (campaign) => campaign.campaignNumber === registry.currentCampaignNumber
-      ),
-    [registry]
-  );
   const activeTitle = tabs.find((tab) => tab.id === activeTab)?.label ?? "Points Operations";
-
-  const totals = useMemo(() => {
-    const currentPoint = currentRows.reduce(
-      (sum, row) => sum + numberValue(row.totalAccumulatedPointInCurrentCampaign),
-      0
-    );
-    const currentSpecial = currentRows.reduce(
-      (sum, row) => sum + numberValue(row.totalAccumulatedSpecialPointInCurrentCampaign),
-      0
-    );
-    const totalPoint = currentRows.reduce(
-      (sum, row) =>
-        sum +
-        numberValue(row.totalAccumulatedPointInPastCampaign) +
-        numberValue(row.totalAccumulatedPointInCurrentCampaign),
-      0
-    );
-
-    return {
-      users: currentRows.length,
-      currentPoint,
-      currentSpecial,
-      totalPoint
-    };
-  }, [currentRows]);
 
   async function loadAll() {
     try {
       setStatus("Loading");
       setBusyAction("load-all");
-      const [registryResponse, currentResponse, inviteResponse] = await Promise.all([
+      const [registryResponse, settledResponse, inviteResponse] = await Promise.all([
         getRegistry(),
-        getCurrentPoints(),
+        getSettledPoints(),
         getInviteCodes()
       ]);
 
       setRegistry(registryResponse);
-      setCurrentRows(currentResponse.rows);
+      setSettledRows(settledResponse.rows);
       setInviteRows(inviteResponse.rows);
       setSelectedCampaignNumber(registryResponse.currentCampaignNumber);
       setMessage("Data loaded");
@@ -147,12 +114,12 @@ export function App() {
       setStatus("Loading");
       setBusyAction("save-campaigns");
       const next = await saveRegistry(registry);
-      const current = await rebuildCurrentPointsFromCampaigns();
+      const settled = await rebuildSettledPointsFromCampaigns();
       setRegistry(next);
-      setCurrentRows(current.rows);
+      setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign config saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+        `Campaign config saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
       );
     } catch (error) {
       setStatus("Error");
@@ -162,9 +129,9 @@ export function App() {
     }
   }
 
-  async function rebuildCurrentTableFromCampaigns() {
+  async function rebuildSettledTableFromCampaigns() {
     const confirmed = window.confirm(
-      "Rebuild current-points.csv from campaign distribution CSVs? This overwrites point columns and preserves existing remarks by address."
+      "Rebuild settled-points.csv from settled campaign distribution CSVs? This overwrites settled_points and preserves special_points and remarks by address."
     );
 
     if (!confirmed) {
@@ -173,12 +140,12 @@ export function App() {
 
     try {
       setStatus("Loading");
-      setBusyAction("rebuild-current");
-      const response = await rebuildCurrentPointsFromCampaigns();
-      setCurrentRows(response.rows);
+      setBusyAction("rebuild-settled");
+      const response = await rebuildSettledPointsFromCampaigns();
+      setSettledRows(response.rows);
       setStatus("Saved");
       setMessage(
-        `Rebuilt current-points.csv from ${response.stats.campaignsRead} campaign CSVs`
+        `Rebuilt settled-points.csv from ${response.stats.campaignsRead} settled campaign CSVs`
       );
     } catch (error) {
       setStatus("Error");
@@ -195,12 +162,12 @@ export function App() {
       setStatus("Loading");
       setBusyAction("save-distribution");
       const response = await saveDistribution(selectedCampaignNumber, distributionRows);
-      const current = await rebuildCurrentPointsFromCampaigns();
+      const settled = await rebuildSettledPointsFromCampaigns();
       setDistributionRows(response.rows);
-      setCurrentRows(current.rows);
+      setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign distribution saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+        `Campaign distribution saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
       );
     } catch (error) {
       setStatus("Error");
@@ -265,7 +232,6 @@ export function App() {
           orderlyPoints: row.orderly_point ?? "",
           allocationPercentage: row.allocation_percentage ?? "",
           vantaPoints: row.vanta_points ?? "",
-          specialPoints: row.special_points ?? "",
           remark: row.remark ?? ""
         }))
       );
@@ -331,12 +297,12 @@ export function App() {
       setStatus("Loading");
       setBusyAction("save-campaigns");
       const next = await saveRegistry(nextRegistry);
-      const current = await rebuildCurrentPointsFromCampaigns();
+      const settled = await rebuildSettledPointsFromCampaigns();
       setRegistry(next);
-      setCurrentRows(current.rows);
+      setSettledRows(settled.rows);
       setStatus("Saved");
       setMessage(
-        `Campaign status saved and current-points rebuilt from ${current.stats.campaignsRead} campaigns`
+        `Campaign status saved and settled-points rebuilt from ${settled.stats.campaignsRead} campaigns`
       );
     } catch (error) {
       setStatus("Error");
@@ -432,7 +398,7 @@ export function App() {
           ) : null}
 
           {activeTab === "current" ? (
-            <CurrentPointsPage rows={currentRows} />
+            <CurrentPointsPage rows={settledRows} />
           ) : null}
 
           {activeTab === "distribution" && registry ? (
@@ -486,7 +452,6 @@ export function App() {
         orderlyPoints: row.orderlyPoints,
         allocationPercentage: "",
         vantaPoints: "",
-        specialPoints: "",
         remark: ""
       }));
     } catch (error) {
@@ -501,7 +466,7 @@ export function App() {
   async function handleEndCampaign() {
     if (!selectedCampaignNumber) return;
     const confirmed = window.confirm(
-      "End this campaign? This writes the distribution CSV, rebuilds current-points.csv, and marks the campaign as SETTLED."
+      "End this campaign? This writes the distribution CSV, rebuilds settled-points.csv, and marks the campaign as SETTLED."
     );
 
     if (!confirmed) return;
@@ -516,7 +481,7 @@ export function App() {
       const nextRegistry = await getRegistry();
       setRegistry(nextRegistry);
       setDistributionRows(result.preview.rows);
-      setCurrentRows(result.currentPoints.rows);
+      setSettledRows(result.settledPoints.rows);
       setStatus("Saved");
       setMessage(`Campaign settled for ${result.preview.stats.userCount} users`);
     } catch (error) {

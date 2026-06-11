@@ -81,7 +81,6 @@ export function DistributionPage({
             orderlyPoints: "0",
             allocationPercentage: "",
             vantaPoints: "0",
-            specialPoints: "0",
             remark: ""
           }
         ])
@@ -100,7 +99,6 @@ export function DistributionPage({
               orderly_point: row.orderlyPoints,
               allocation_percentage: row.allocationPercentage,
               vanta_points: row.vantaPoints,
-              special_points: row.specialPoints,
               remark: row.remark
             }))
           )
@@ -149,7 +147,6 @@ function DistributionRow({
         });
       }} /></td>
       <td><input value={row.vantaPoints} onChange={(event) => patch({ vantaPoints: event.target.value })} /></td>
-      <td><input value={row.specialPoints} onChange={(event) => patch({ specialPoints: event.target.value })} /></td>
       <td><input value={row.remark} onChange={(event) => patch({ remark: event.target.value })} /></td>
       <td><button className="icon-button danger" onClick={() => onChange(allRows.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={16} /></button></td>
     </tr>

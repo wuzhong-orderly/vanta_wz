@@ -5,7 +5,7 @@ Independent CSV-backed reward service for Vanta points campaign data.
 ## Apps
 
 - `apps/api`: Public campaign, user points, and leaderboard API.
-- `apps/admin-web`: Internal CSV data editor for campaign config, current points, distribution rows, and leaderboard review.
+- `apps/admin-web`: Internal CSV data editor for campaign config, settled points, distribution rows, and leaderboard review.
 
 ## Packages
 
@@ -15,7 +15,7 @@ Independent CSV-backed reward service for Vanta points campaign data.
 
 - `data/campaigns.json`: Campaign config registry and current campaign pointer.
 - `data/campaign-<number>-distribution.csv`: One CSV per campaign distribution.
-- `data/current-points.csv`: Current accumulated points by address.
+- `data/settled-points.csv`: Settled points, special points, and remarks by address.
 
 Campaign config schema:
 
@@ -38,13 +38,13 @@ Campaign config schema:
 Campaign distribution CSV columns:
 
 ```csv
-address,orderly_point,allocation_percentage,vanta_points,special_points,remark
+address,orderly_point,allocation_percentage,vanta_points,remark
 ```
 
-Current points CSV columns:
+Settled points CSV columns:
 
 ```csv
-address,total_accumulated_point_in_past_campaign,total_accumulated_point_in_current_campaign,total_accumulated_special_point_in_past_campaign,total_accumulated_special_point_in_current_campaign,remark
+address,settled_points,special_points,remark
 ```
 
 ## API
@@ -56,9 +56,9 @@ GET /api/leaderboard/total
 
 GET /admin/registry
 PUT /admin/registry
-GET /admin/current-points
-PUT /admin/current-points
-POST /admin/current-points/rebuild-from-campaigns
+GET /admin/settled-points
+PUT /admin/settled-points
+POST /admin/settled-points/rebuild-from-campaigns
 GET /admin/campaigns/:campaignNumber/distribution
 PUT /admin/campaigns/:campaignNumber/distribution
 POST /admin/campaigns/:campaignNumber/allocation-preview
@@ -76,7 +76,7 @@ Flow:
 2. Import Orderly points, or use the existing campaign distribution CSV.
 3. Generate an allocation preview.
 4. Edit `allocation_percentage` per address if manual override is needed.
-5. Click **End Campaign** to write the campaign distribution CSV, rebuild `current-points.csv`, and mark the campaign as `SETTLED`.
+5. Click **End Campaign** to write the campaign distribution CSV, rebuild `settled-points.csv`, and mark the campaign as `SETTLED`.
 
 Default allocation:
 
@@ -85,20 +85,18 @@ allocation_percentage = user_orderly_point / total_orderly_point * 100
 vanta_points = totalVantaPoints * allocation_percentage / 100
 ```
 
-`special_points` are independent manual points and are not part of the Vanta pool allocation.
+Special points are independent manual points stored in `settled-points.csv`; campaign distribution CSVs do not contain special points.
 
-## Rebuild Current Points
+## Rebuild Settled Points
 
-The admin UI can rebuild `current-points.csv` from campaign distribution CSV files.
+The admin UI can rebuild `settled-points.csv` from settled campaign distribution CSV files.
 
 Rules:
 
-- Campaigns with `campaignNumber < currentCampaignNumber` are accumulated into past campaign point columns.
-- Campaigns with `campaignNumber === currentCampaignNumber` are accumulated into current campaign point columns.
-- Campaigns with `campaignNumber > currentCampaignNumber` are ignored.
+- Settled campaigns are accumulated into `settled_points`.
+- Active or ended campaign points are calculated dynamically from campaign distribution CSVs.
 - Normal points come from `vanta_points`.
-- Special points come from `special_points`.
-- Existing remarks in `current-points.csv` are preserved by address.
+- Existing `special_points` and remarks in `settled-points.csv` are preserved by address.
 
 ## MVP Scope
 

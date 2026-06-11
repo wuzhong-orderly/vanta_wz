@@ -29,12 +29,10 @@ type CampaignConfig = {
 
 type UserPointsResponse = {
   address: string;
-  totalAccumulatedPointInPastCampaign: string;
-  totalAccumulatedSpecialPointInPastCampaign: string;
+  settledPoints: string;
+  specialPoints: string;
   currentPoint: string;
-  currentSpecialPoint: string;
   totalPoint: string;
-  totalSpecialPoint: string;
   remark: string;
 };
 
@@ -191,24 +189,21 @@ export default function PointsIndex() {
             locale={locale}
           />
           <PointMetric
-            label={t("points.currentCampaign", "Current Campaign")}
+            label={t("points.currentCampaign", "My Current Points")}
             value={userPoints?.currentPoint ?? "0"}
             subLabel={t("points.vantaPoints", "Vanta points")}
             locale={locale}
           />
           <PointMetric
             label={t("points.pastCampaigns", "Past Campaigns")}
-            value={userPoints?.totalAccumulatedPointInPastCampaign ?? "0"}
+            value={userPoints?.settledPoints ?? "0"}
             subLabel={t("points.accumulated", "Accumulated")}
             locale={locale}
           />
           <PointMetric
             label={t("points.specialPoints", "Special Points")}
-            value={userPoints?.totalSpecialPoint ?? "0"}
-            subLabel={`${formatPoints(userPoints?.currentSpecialPoint ?? "0", locale)} ${t(
-              "points.current",
-              "current"
-            )}`}
+            value={userPoints?.specialPoints ?? "0"}
+            subLabel={t("points.settled", "Settled")}
             locale={locale}
           />
         </section>
@@ -250,8 +245,6 @@ export default function PointsIndex() {
                   <th>{t("points.address", "Address")}</th>
                   <th>{t("points.totalPoints", "Total Points")}</th>
                   <th>{t("points.current", "Current")}</th>
-                  <th>{t("points.special", "Special")}</th>
-                  <th>{t("points.remark", "Remark")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,8 +262,6 @@ export default function PointsIndex() {
                     <td>{formatAddress(row.address)}</td>
                     <td>{formatPoints(row.totalPoint, locale)}</td>
                     <td>{formatPoints(row.currentPoint, locale)}</td>
-                    <td>{formatPoints(row.totalSpecialPoint, locale)}</td>
-                    <td>{row.remark || "-"}</td>
                   </tr>
                 ))}
               </tbody>

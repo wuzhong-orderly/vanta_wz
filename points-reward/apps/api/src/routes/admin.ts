@@ -3,15 +3,15 @@ import { z } from "zod";
 import {
   endCampaign,
   getCampaignDistributionRowsByNumber,
-  getCurrentPointsRows,
   getOrderlyEpochs,
   getOrderlyStages,
   getRegistry,
+  getSettledPointsRows,
   importOrderlyCampaignRows,
   previewCampaignAllocation,
-  rebuildCurrentPointsFromCampaigns,
+  rebuildSettledPointsFromCampaigns,
   saveCampaignDistributionRows,
-  saveCurrentPointsRows,
+  saveSettledPointsRows,
   saveRegistry
 } from "../lib/campaign-store.js";
 import { getInviteCodeRows, saveInviteCodeRows } from "../lib/invite-store.js";
@@ -34,16 +34,14 @@ const campaignSchema = z.object({
 
 const registrySchema = z.object({
   currentCampaignNumber: z.number().int().positive(),
-  currentPointsCsv: z.string(),
+  settledPointsCsv: z.string(),
   campaigns: z.array(campaignSchema)
 });
 
-const currentPointsRowSchema = z.object({
+const settledPointsRowSchema = z.object({
   address: z.string(),
-  totalAccumulatedPointInPastCampaign: z.string(),
-  totalAccumulatedPointInCurrentCampaign: z.string(),
-  totalAccumulatedSpecialPointInPastCampaign: z.string(),
-  totalAccumulatedSpecialPointInCurrentCampaign: z.string(),
+  settledPoints: z.string(),
+  specialPoints: z.string(),
   remark: z.string()
 });
 
@@ -52,7 +50,6 @@ const distributionRowSchema = z.object({
   orderlyPoints: z.string(),
   allocationPercentage: z.string(),
   vantaPoints: z.string(),
-  specialPoints: z.string(),
   remark: z.string()
 });
 
@@ -78,12 +75,12 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.put("/admin/registry", async (request) => {
     const registry = registrySchema.parse(request.body);
     const saved = await saveRegistry(registry);
-    await rebuildCurrentPointsFromCampaigns();
+    await rebuildSettledPointsFromCampaigns();
     return saved;
   });
 
-  app.get("/admin/current-points", async () => ({
-    rows: await getCurrentPointsRows()
+  app.get("/admin/settled-points", async () => ({
+    rows: await getSettledPointsRows()
   }));
 
   app.get("/admin/invite-codes", async () => ({
@@ -98,15 +95,15 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
-  app.put("/admin/current-points", async (request) => {
-    const { rows } = z.object({ rows: z.array(currentPointsRowSchema) }).parse(request.body);
+  app.put("/admin/settled-points", async (request) => {
+    const { rows } = z.object({ rows: z.array(settledPointsRowSchema) }).parse(request.body);
     return {
-      rows: await saveCurrentPointsRows(rows)
+      rows: await saveSettledPointsRows(rows)
     };
   });
 
-  app.post("/admin/current-points/rebuild-from-campaigns", async () =>
-    rebuildCurrentPointsFromCampaigns()
+  app.post("/admin/settled-points/rebuild-from-campaigns", async () =>
+    rebuildSettledPointsFromCampaigns()
   );
 
   app.get("/admin/campaigns/:campaignNumber/distribution", async (request) => {
@@ -126,7 +123,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const { rows } = z.object({ rows: z.array(distributionRowSchema) }).parse(request.body);
 
     const savedRows = await saveCampaignDistributionRows(campaignNumber, rows);
-    await rebuildCurrentPointsFromCampaigns();
+    await rebuildSettledPointsFromCampaigns();
 
     return {
       rows: savedRows
