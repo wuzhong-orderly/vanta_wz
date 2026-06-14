@@ -1,10 +1,13 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import type { InviteBindingResponse, InviteCodeRow } from "@points-reward/shared";
+import type { InviteBindingResponse, InviteBindingRow, InviteCodeRow } from "@points-reward/shared";
 
 const inviteCodesCsv = process.env.INVITE_CODES_CSV ?? "invite-codes.csv";
-const inviteHeaders = ["邀请码", "Orderly Ref Code", "绑定地址", "绑定时间"];
+const inviteBindingsCsv = process.env.INVITE_BINDINGS_CSV ?? "invite-bindings.csv";
+const defaultMaxBindings = "500";
+const inviteHeaders = ["邀请码", "Orderly Ref Code", "Max Bindings", "Remark"];
+const inviteBindingHeaders = ["邀请码", "绑定地址", "绑定时间"];
 
 const bindInviteSchema = z.object({
   address: z.string().min(1),
@@ -18,45 +21,59 @@ type FileSnapshot = {
 };
 
 let dataDirPromise: Promise<string> | undefined;
-let inviteRowsCache:
+let inviteCodesCache:
   | {
       file: FileSnapshot;
       rows: InviteCodeRow[];
     }
   | undefined;
+let inviteBindingsCache:
+  | {
+      file: FileSnapshot | null;
+      rows: InviteBindingRow[];
+    }
+  | undefined;
 let inviteWriteQueue = Promise.resolve();
 
-export async function getInviteCodeRows() {
-  return readInviteCodeRows();
+export async function getInviteAdminData() {
+  const [rows, bindings] = await Promise.all([readInviteCodeRows(), readInviteBindingRows()]);
+  return { rows, bindings };
 }
 
-export async function saveInviteCodeRows(rows: InviteCodeRow[]) {
+export async function saveInviteAdminData(rows: InviteCodeRow[], bindings: InviteBindingRow[]) {
   return withInviteWriteLock(async () => {
     const normalizedRows = normalizeInviteRows(rows);
-    validateInviteRows(normalizedRows);
+    const normalizedBindings = normalizeInviteBindings(bindings);
+    validateInviteData(normalizedRows, normalizedBindings);
     await writeInviteRows(normalizedRows);
-    return normalizedRows;
+    await writeInviteBindings(normalizedBindings);
+    return {
+      rows: normalizedRows,
+      bindings: normalizedBindings
+    };
   });
 }
 
 export async function getInviteBinding(address: string): Promise<InviteBindingResponse> {
   const normalizedAddress = normalizeAddress(address);
-  const rows = await readInviteCodeRows();
-  const row = rows.find((item) => normalizeAddress(item.boundAddress) === normalizedAddress);
+  const [rows, bindings] = await Promise.all([readInviteCodeRows(), readInviteBindingRows()]);
+  const binding = bindings.find((item) => normalizeAddress(item.boundAddress) === normalizedAddress);
 
-  if (!row) {
+  if (!binding) {
     return {
       bound: false,
       address
     };
   }
 
+  const invite = findInviteRow(rows, binding.inviteCode);
+
   return {
     bound: true,
-    address: row.boundAddress,
-    inviteCode: row.inviteCode,
-    orderlyRefCode: row.orderlyRefCode,
-    boundAt: row.boundAt
+    address: binding.boundAddress,
+    inviteCode: binding.inviteCode,
+    orderlyRefCode: invite?.orderlyRefCode ?? "",
+    boundAt: binding.boundAt
   };
 }
 
@@ -67,42 +84,51 @@ export async function bindInviteCode(input: unknown): Promise<InviteBindingRespo
     const normalizedAddress = normalizeAddress(address);
     const inviteCode = normalizeInviteCode(payload.inviteCode);
 
-    const rows = await readInviteCodeRows();
-    const existingAddressRow = rows.find(
+    const [rows, bindings] = await Promise.all([readInviteCodeRows(), readInviteBindingRows()]);
+    const existingBinding = bindings.find(
       (row) => normalizeAddress(row.boundAddress) === normalizedAddress
     );
 
-    if (existingAddressRow) {
+    if (existingBinding) {
+      const invite = findInviteRow(rows, existingBinding.inviteCode);
       return {
         bound: true,
-        address: existingAddressRow.boundAddress,
-        inviteCode: existingAddressRow.inviteCode,
-        orderlyRefCode: existingAddressRow.orderlyRefCode,
-        boundAt: existingAddressRow.boundAt
+        address: existingBinding.boundAddress,
+        inviteCode: existingBinding.inviteCode,
+        orderlyRefCode: invite?.orderlyRefCode ?? "",
+        boundAt: existingBinding.boundAt
       };
     }
 
-    const row = rows.find((item) => normalizeInviteCode(item.inviteCode) === inviteCode);
+    const row = findInviteRow(rows, inviteCode);
 
     if (!row) {
       throw new Error("Invite code not found.");
     }
 
-    if (row.boundAddress.trim()) {
-      throw new Error("Invite code has already been used.");
+    const currentBindingCount = bindings.filter(
+      (binding) => normalizeInviteCode(binding.inviteCode) === inviteCode
+    ).length;
+
+    if (currentBindingCount >= getMaxBindings(row)) {
+      throw new Error("Invite code has reached its binding limit.");
     }
 
-    row.boundAddress = address;
-    row.boundAt = new Date().toISOString();
-    validateInviteRows(rows);
-    await writeInviteRows(rows);
+    const binding = {
+      inviteCode: row.inviteCode,
+      boundAddress: address,
+      boundAt: new Date().toISOString()
+    };
+    const nextBindings = [...bindings, binding];
+    validateInviteData(rows, nextBindings);
+    await writeInviteBindings(nextBindings);
 
     return {
       bound: true,
-      address: row.boundAddress,
+      address: binding.boundAddress,
       inviteCode: row.inviteCode,
       orderlyRefCode: row.orderlyRefCode,
-      boundAt: row.boundAt
+      boundAt: binding.boundAt
     };
   });
 }
@@ -110,8 +136,8 @@ export async function bindInviteCode(input: unknown): Promise<InviteBindingRespo
 async function readInviteCodeRows() {
   const file = await readDataFileSnapshot(inviteCodesCsv);
 
-  if (inviteRowsCache && isSameSnapshot(inviteRowsCache.file, file)) {
-    return inviteRowsCache.rows;
+  if (inviteCodesCache && isSameSnapshot(inviteCodesCache.file, file)) {
+    return inviteCodesCache.rows;
   }
 
   const rows = parseCsv(file.content).map((row) => ({
@@ -125,11 +151,13 @@ async function readInviteCodeRows() {
       "ref_code",
       "refCode"
     ),
-    boundAddress: getCsvValue(row, "绑定地址", "bound_address", "boundAddress"),
-    boundAt: getCsvValue(row, "绑定时间", "bound_at", "boundAt")
+    maxBindings:
+      getCsvValue(row, "Max Bindings", "max_bindings", "maxBindings", "binding_limit") ||
+      defaultMaxBindings,
+    remark: getCsvValue(row, "Remark", "remark")
   }));
 
-  inviteRowsCache = {
+  inviteCodesCache = {
     file,
     rows
   };
@@ -137,10 +165,58 @@ async function readInviteCodeRows() {
   return rows;
 }
 
-function toCsvRow(row: InviteCodeRow) {
+async function readInviteBindingRows() {
+  const file = await readOptionalDataFileSnapshot(inviteBindingsCsv);
+
+  if (
+    inviteBindingsCache &&
+    ((inviteBindingsCache.file === null && file === null) ||
+      (inviteBindingsCache.file !== null && file !== null && isSameSnapshot(inviteBindingsCache.file, file)))
+  ) {
+    return inviteBindingsCache.rows;
+  }
+
+  const rows =
+    file === null
+      ? await readLegacyInviteBindings()
+      : parseCsv(file.content).map((row) => ({
+          inviteCode: getCsvValue(row, "邀请码", "invite_code", "inviteCode"),
+          boundAddress: getCsvValue(row, "绑定地址", "bound_address", "boundAddress", "address"),
+          boundAt: getCsvValue(row, "绑定时间", "bound_at", "boundAt")
+        }));
+
+  inviteBindingsCache = {
+    file,
+    rows
+  };
+
+  return rows;
+}
+
+async function readLegacyInviteBindings() {
+  const file = await readDataFileSnapshot(inviteCodesCsv);
+
+  return parseCsv(file.content)
+    .map((row) => ({
+      inviteCode: getCsvValue(row, "邀请码", "invite_code", "inviteCode"),
+      boundAddress: getCsvValue(row, "绑定地址", "bound_address", "boundAddress", "address"),
+      boundAt: getCsvValue(row, "绑定时间", "bound_at", "boundAt")
+    }))
+    .filter((row) => row.boundAddress.trim());
+}
+
+function toInviteCsvRow(row: InviteCodeRow) {
   return {
     邀请码: row.inviteCode,
     "Orderly Ref Code": row.orderlyRefCode,
+    "Max Bindings": row.maxBindings,
+    Remark: row.remark
+  };
+}
+
+function toInviteBindingCsvRow(row: InviteBindingRow) {
+  return {
+    邀请码: row.inviteCode,
     绑定地址: row.boundAddress,
     绑定时间: row.boundAt
   };
@@ -150,14 +226,23 @@ function normalizeInviteRows(rows: InviteCodeRow[]) {
   return rows.map((row) => ({
     inviteCode: normalizeInviteCode(row.inviteCode),
     orderlyRefCode: (row.orderlyRefCode ?? "").trim(),
+    maxBindings: normalizeMaxBindings(row.maxBindings),
+    remark: (row.remark ?? "").trim()
+  }));
+}
+
+function normalizeInviteBindings(rows: InviteBindingRow[]) {
+  return rows.map((row) => ({
+    inviteCode: normalizeInviteCode(row.inviteCode),
     boundAddress: row.boundAddress.trim(),
     boundAt: row.boundAt.trim()
   }));
 }
 
-function validateInviteRows(rows: InviteCodeRow[]) {
+function validateInviteData(rows: InviteCodeRow[], bindings: InviteBindingRow[]) {
   const inviteCodes = new Set<string>();
   const boundAddresses = new Set<string>();
+  const bindingCountsByInviteCode = new Map<string, number>();
 
   for (const row of rows) {
     const inviteCode = normalizeInviteCode(row.inviteCode);
@@ -171,23 +256,49 @@ function validateInviteRows(rows: InviteCodeRow[]) {
     }
 
     inviteCodes.add(inviteCode);
+  }
 
-    const boundAddress = normalizeAddress(row.boundAddress);
+  for (const binding of bindings) {
+    const inviteCode = normalizeInviteCode(binding.inviteCode);
+    const boundAddress = normalizeAddress(binding.boundAddress);
 
-    if (!boundAddress) {
+    if (!inviteCode || !boundAddress) {
       continue;
     }
 
+    if (!inviteCodes.has(inviteCode)) {
+      throw new Error(`Binding references unknown invite code: ${binding.inviteCode}`);
+    }
+
     if (boundAddresses.has(boundAddress)) {
-      throw new Error(`Address has already bound an invite code: ${row.boundAddress}`);
+      throw new Error(`Address has already bound an invite code: ${binding.boundAddress}`);
     }
 
     boundAddresses.add(boundAddress);
+    bindingCountsByInviteCode.set(inviteCode, (bindingCountsByInviteCode.get(inviteCode) ?? 0) + 1);
+  }
+
+  for (const row of rows) {
+    const inviteCode = normalizeInviteCode(row.inviteCode);
+    const bindingCount = bindingCountsByInviteCode.get(inviteCode) ?? 0;
+
+    if (bindingCount > getMaxBindings(row)) {
+      throw new Error(
+        `Invite code ${row.inviteCode} has ${bindingCount} bindings, above max ${row.maxBindings}`
+      );
+    }
   }
 }
 
 async function writeInviteRows(rows: InviteCodeRow[]) {
-  await writeDataFile(inviteCodesCsv, stringifyCsv(inviteHeaders, rows.map(toCsvRow)));
+  await writeDataFile(inviteCodesCsv, stringifyCsv(inviteHeaders, rows.map(toInviteCsvRow)));
+}
+
+async function writeInviteBindings(rows: InviteBindingRow[]) {
+  await writeDataFile(
+    inviteBindingsCsv,
+    stringifyCsv(inviteBindingHeaders, rows.map(toInviteBindingCsvRow))
+  );
 }
 
 async function withInviteWriteLock<T>(action: () => Promise<T>) {
@@ -197,6 +308,29 @@ async function withInviteWriteLock<T>(action: () => Promise<T>) {
     () => undefined
   );
   return run;
+}
+
+function findInviteRow(rows: InviteCodeRow[], inviteCode: string) {
+  const normalizedInviteCode = normalizeInviteCode(inviteCode);
+  return rows.find((row) => normalizeInviteCode(row.inviteCode) === normalizedInviteCode);
+}
+
+function getMaxBindings(row: InviteCodeRow) {
+  const maxBindings = Number(row.maxBindings);
+  return Number.isFinite(maxBindings) && maxBindings > 0
+    ? Math.floor(maxBindings)
+    : Number(defaultMaxBindings);
+}
+
+function normalizeMaxBindings(maxBindings: string) {
+  const value = maxBindings.trim() || defaultMaxBindings;
+  const numericValue = Number(value);
+
+  if (!Number.isInteger(numericValue) || numericValue < 1) {
+    throw new Error(`Max Bindings must be a positive integer: ${maxBindings}`);
+  }
+
+  return String(numericValue);
 }
 
 function parseCsv(csv: string): Record<string, string>[] {
@@ -312,14 +446,6 @@ async function readDataFileSnapshot(relativePath: string): Promise<FileSnapshot>
   const absolutePath = path.join(await getDataDir(), relativePath);
   const stats = await stat(absolutePath);
 
-  if (
-    inviteRowsCache &&
-    inviteRowsCache.file.mtimeMs === stats.mtimeMs &&
-    inviteRowsCache.file.size === stats.size
-  ) {
-    return inviteRowsCache.file;
-  }
-
   return {
     content: await readFile(absolutePath, "utf8"),
     mtimeMs: stats.mtimeMs,
@@ -327,13 +453,35 @@ async function readDataFileSnapshot(relativePath: string): Promise<FileSnapshot>
   };
 }
 
+async function readOptionalDataFileSnapshot(relativePath: string): Promise<FileSnapshot | null> {
+  try {
+    return await readDataFileSnapshot(relativePath);
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 async function writeDataFile(relativePath: string, content: string) {
   await writeFile(path.join(await getDataDir(), relativePath), content, "utf8");
-  inviteRowsCache = undefined;
+  inviteCodesCache = undefined;
+  inviteBindingsCache = undefined;
 }
 
 function isSameSnapshot(left: FileSnapshot, right: FileSnapshot) {
   return left.mtimeMs === right.mtimeMs && left.size === right.size;
+}
+
+function isFileNotFoundError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
 }
 
 async function getDataDir() {

@@ -2,6 +2,7 @@ import type {
   AllocationPreview,
   CampaignDistributionRow,
   CampaignRegistry,
+  InviteBindingRow,
   InviteCodeRow,
   LeaderboardRow,
   SettledPointsRow,
@@ -55,16 +56,21 @@ export async function saveSettledPoints(rows: SettledPointsRow[]) {
 }
 
 export async function getInviteCodes() {
-  return request<{ rows: InviteCodeRow[] }>("/admin/invite-codes");
+  return request<{ rows: InviteCodeRow[]; bindings: InviteBindingRow[] }>("/admin/invite-codes");
 }
 
-export async function saveInviteCodes(rows: InviteCodeRow[]) {
-  return request<{ rows: InviteCodeRow[] }>("/admin/invite-codes", {
+export async function saveInviteCodes(rows: InviteCodeRow[], bindings: InviteBindingRow[]) {
+  return request<{ rows: InviteCodeRow[]; bindings: InviteBindingRow[] }>("/admin/invite-codes", {
     method: "PUT",
     body: JSON.stringify({
       rows: rows.map((row) => ({
         inviteCode: row.inviteCode,
         orderlyRefCode: row.orderlyRefCode ?? "",
+        maxBindings: row.maxBindings || "500",
+        remark: row.remark ?? ""
+      })),
+      bindings: bindings.map((row) => ({
+        inviteCode: row.inviteCode,
         boundAddress: row.boundAddress,
         boundAt: row.boundAt
       }))

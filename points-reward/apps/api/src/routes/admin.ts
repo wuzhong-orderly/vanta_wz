@@ -14,7 +14,7 @@ import {
   saveSettledPointsRows,
   saveRegistry
 } from "../lib/campaign-store.js";
-import { getInviteCodeRows, saveInviteCodeRows } from "../lib/invite-store.js";
+import { getInviteAdminData, saveInviteAdminData } from "../lib/invite-store.js";
 
 const campaignSchema = z.object({
   campaignNumber: z.number().int().positive(),
@@ -58,6 +58,12 @@ const distributionRowSchema = z.object({
 const inviteCodeRowSchema = z.object({
   inviteCode: z.string(),
   orderlyRefCode: z.string().default(""),
+  maxBindings: z.string().default("500"),
+  remark: z.string().default("")
+});
+
+const inviteBindingRowSchema = z.object({
+  inviteCode: z.string(),
   boundAddress: z.string(),
   boundAt: z.string()
 });
@@ -102,16 +108,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     rows: await getSettledPointsRows()
   }));
 
-  app.get("/admin/invite-codes", async () => ({
-    rows: await getInviteCodeRows()
-  }));
+  app.get("/admin/invite-codes", async () => getInviteAdminData());
 
   app.put("/admin/invite-codes", async (request) => {
-    const { rows } = z.object({ rows: z.array(inviteCodeRowSchema) }).parse(request.body);
+    const { rows, bindings } = z
+      .object({
+        rows: z.array(inviteCodeRowSchema),
+        bindings: z.array(inviteBindingRowSchema).default([])
+      })
+      .parse(request.body);
 
-    return {
-      rows: await saveInviteCodeRows(rows)
-    };
+    return saveInviteAdminData(rows, bindings);
   });
 
   app.put("/admin/settled-points", async (request) => {

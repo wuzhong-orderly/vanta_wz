@@ -81,6 +81,12 @@ export interface LeaderboardRow {
 export interface InviteCodeRow {
   inviteCode: string;
   orderlyRefCode: string;
+  maxBindings: string;
+  remark: string;
+}
+
+export interface InviteBindingRow {
+  inviteCode: string;
   boundAddress: string;
   boundAt: string;
 }

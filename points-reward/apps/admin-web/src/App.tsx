@@ -28,6 +28,7 @@ import type {
   CampaignConfig,
   CampaignDistributionRow,
   CampaignRegistry,
+  InviteBindingRow,
   InviteCodeRow,
   SettledPointsRow,
   Tab
@@ -58,6 +59,7 @@ export function App() {
   const [settledRows, setSettledRows] = useState<SettledPointsRow[]>([]);
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
   const [inviteRows, setInviteRows] = useState<InviteCodeRow[]>([]);
+  const [inviteBindings, setInviteBindings] = useState<InviteBindingRow[]>([]);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
   const [adminToken, setAdminTokenState] = useState(() => getAdminToken());
 
@@ -111,6 +113,7 @@ export function App() {
     setSettledRows([]);
     setDistributionRows([]);
     setInviteRows([]);
+    setInviteBindings([]);
     setSelectedCampaignNumber(null);
     setStatus("Idle");
     setMessage("");
@@ -130,6 +133,7 @@ export function App() {
       setRegistry(normalizedRegistry);
       setSettledRows(settledResponse.rows);
       setInviteRows(inviteResponse.rows);
+      setInviteBindings(inviteResponse.bindings);
       setSelectedCampaignNumber(normalizedRegistry.currentCampaignNumber);
       setMessage("Data loaded");
       setStatus("Idle");
@@ -247,10 +251,13 @@ export function App() {
     try {
       setStatus("Loading");
       setBusyAction("save-invites");
-      const response = await saveInviteCodes(inviteRows);
+      const response = await saveInviteCodes(inviteRows, inviteBindings);
       setInviteRows(response.rows);
+      setInviteBindings(response.bindings);
       setStatus("Saved");
-      setMessage(`Invite CSV saved with ${response.rows.length} codes`);
+      setMessage(
+        `Invite CSV saved with ${response.rows.length} codes and ${response.bindings.length} bindings`
+      );
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -337,21 +344,61 @@ export function App() {
       setBusyAction("import-invites");
       setMessage(`Importing ${file.name}...`);
       const text = await file.text();
-      setInviteRows(
-        parseCsv(text).map((row) => ({
-          inviteCode: (row["邀请码"] ?? row.invite_code ?? row.invitecode ?? "").toUpperCase(),
-          orderlyRefCode:
-            row["Orderly Ref Code"] ??
-            row.orderly_ref_code ??
-            row.orderlyrefcode ??
-            row.ref_code ??
-            row.refcode ??
-            row.ref ??
-            "",
-          boundAddress: row["绑定地址"] ?? row.bound_address ?? row.boundaddress ?? "",
-          boundAt: row["绑定时间"] ?? row.bound_at ?? row.boundat ?? ""
-        }))
+      const parsedRows = parseCsv(text);
+      const hasInviteConfigColumns = parsedRows.some(
+        (row) =>
+          row["orderly ref code"] !== undefined ||
+          row.orderly_ref_code !== undefined ||
+          row.max_bindings !== undefined ||
+          row["max bindings"] !== undefined ||
+          row.remark !== undefined
       );
+      const hasInviteBindingColumns = parsedRows.some(
+        (row) =>
+          row["绑定地址"] !== undefined ||
+          row.bound_address !== undefined ||
+          row.boundaddress !== undefined
+      );
+      const importedInviteRows: InviteCodeRow[] = [];
+      const importedBindings: InviteBindingRow[] = [];
+
+      for (const row of parsedRows) {
+        const inviteCode = (row["邀请码"] ?? row.invite_code ?? row.invitecode ?? "").toUpperCase();
+        const boundAddress = row["绑定地址"] ?? row.bound_address ?? row.boundaddress ?? "";
+        const boundAt = row["绑定时间"] ?? row.bound_at ?? row.boundat ?? "";
+
+        if (hasInviteConfigColumns || !boundAddress.trim()) {
+          importedInviteRows.push({
+            inviteCode,
+            orderlyRefCode:
+              row["orderly ref code"] ??
+              row.orderly_ref_code ??
+              row.orderlyrefcode ??
+              row.ref_code ??
+              row.refcode ??
+              row.ref ??
+              "",
+            maxBindings: row["max bindings"] ?? row.max_bindings ?? row.maxbindings ?? "500",
+            remark: row.remark ?? ""
+          });
+        }
+
+        if (boundAddress.trim()) {
+          importedBindings.push({
+            inviteCode,
+            boundAddress,
+            boundAt
+          });
+        }
+      }
+
+      if (hasInviteConfigColumns || importedInviteRows.length > 0) {
+        setInviteRows(importedInviteRows);
+      }
+
+      if (hasInviteBindingColumns) {
+        setInviteBindings(importedBindings);
+      }
       setStatus("Idle");
       setMessage(`Imported ${file.name}`);
     } catch (error) {
@@ -580,7 +627,9 @@ export function App() {
           {activeTab === "invites" ? (
             <InviteManagementPage
               rows={inviteRows}
+              bindings={inviteBindings}
               onChange={setInviteRows}
+              onBindingsChange={setInviteBindings}
               onImport={(file) => void importInviteCsv(file)}
               onSave={() => void saveInviteTable()}
               isImporting={busyAction === "import-invites"}

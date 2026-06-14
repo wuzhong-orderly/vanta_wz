@@ -211,6 +211,40 @@ button,
   padding: 14px;
 }
 
+.invite-management {
+  display: grid;
+  gap: 14px;
+}
+
+.sub-tabs {
+  align-items: center;
+  background: #eef2f6;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  width: fit-content;
+}
+
+.sub-tabs button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #5d6877;
+  cursor: pointer;
+  font-weight: 700;
+  height: 34px;
+  padding: 0 14px;
+}
+
+.sub-tabs button.active,
+.sub-tabs button:hover {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
 .settlement-layout {
   display: grid;
   gap: 14px;
