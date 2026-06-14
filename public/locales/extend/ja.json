@@ -5,6 +5,7 @@
   "extend.staking": "ステーキング",
   "extend.staking.description": "ORDER/esORDERをステーキングしてVALORを獲得",
   "extend.swap": "現物",
+  "extend.nav.futures": "先物",
   "extend.nav.csTeam": "サポート",
   "extend.nav.userManual": "ユーザーマニュアル",
   "extend.nav.more": "もっと見る",

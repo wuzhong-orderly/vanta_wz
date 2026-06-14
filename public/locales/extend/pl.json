@@ -5,6 +5,7 @@
   "extend.staking": "Staking",
   "extend.staking.description": "Stake ORDER/esORDER to acquire VALOR",
   "extend.swap": "Spot",
+  "extend.nav.futures": "Futures",
   "extend.nav.csTeam": "Wsparcie",
   "extend.nav.userManual": "Instrukcja obsługi",
   "extend.nav.more": "Więcej",

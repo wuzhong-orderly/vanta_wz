@@ -7,6 +7,7 @@
   "extend.staking": "스테이킹",
   "extend.staking.description": "ORDER/esORDER 스테이킹으로 VALOR 획득",
   "extend.swap": "현물",
+  "extend.nav.futures": "선물",
   "extend.nav.csTeam": "지원",
   "extend.nav.userManual": "사용자 매뉴얼",
   "extend.nav.more": "더보기",

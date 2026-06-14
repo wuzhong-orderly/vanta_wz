@@ -5,6 +5,7 @@
   "extend.staking": "Staking",
   "extend.staking.description": "VALOR kazanmak için ORDER/esORDER yatırın",
   "extend.swap": "Spot",
+  "extend.nav.futures": "Vadeli İşlemler",
   "extend.nav.csTeam": "Destek",
   "extend.nav.userManual": "Kullanım kılavuzu",
   "extend.nav.more": "Daha fazla",

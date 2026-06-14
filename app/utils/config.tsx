@@ -278,7 +278,7 @@ export const useOrderlyConfig = () => {
     // Futures | Spot | Portfolio | CS Team ▼ | More ▼
     const mainMenuItems: MainNavItem[] = [
       {
-        name: t("common.trading"),
+        name: t("extend.nav.futures", "Futures"),
         href: "/",
         className: "futures-nav-item",
       },
@@ -336,18 +336,20 @@ export const useOrderlyConfig = () => {
     // Add any custom menu items from config, excluding ones already hardcoded
     const hardcodedNames = mainMenuItems.map((m) => m.name.toUpperCase());
     const filteredCustomMenus = customMenus.filter(
-      (m) => !hardcodedNames.includes(m.name.toUpperCase())
+      (m) =>
+        !hardcodedNames.includes(m.name.toUpperCase()) &&
+        m.name.trim().toUpperCase() !== "SUPPORT"
     );
     const allMenuItems: MainNavItem[] = [...mainMenuItems, ...filteredCustomMenus];
 
     // For mobile left nav, flatten into simple items
     const mobileMenus = [
-      { name: t("common.trading"), href: "/" },
+      { name: t("extend.nav.futures", "Futures"), href: "/" },
       { name: t("extend.swap"), href: "/swap" },
       { name: t("common.markets"), href: "/markets" },
       { name: t("common.portfolio"), href: "/portfolio" },
       { name: t("tradingLeaderboard.leaderboard"), href: "/leaderboard" },
-      { name: t("tradingPoints.points", "Points"), href: "/points" },
+      { name: t("points.eyebrow", "Vanta Genesis Points"), href: "/points" },
     ];
 
     const supportedBottomNavMenus = [
@@ -400,12 +402,12 @@ export const useOrderlyConfig = () => {
             </Link>
             {components.mainNav}
             {!isMobile && (
-              <Link to="/rewards" className="vanta-genesis-points-btn">
+              <Link to="/points" className="vanta-genesis-points-btn">
                 <svg className="vanta-genesis-points-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                Support
+                {t("points.eyebrow", "Vanta Genesis Points")}
               </Link>
             )}
           </Flex>
