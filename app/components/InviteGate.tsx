@@ -7,13 +7,15 @@ type InviteBindingResponse = {
   bound: boolean;
   address: string;
   inviteCode?: string;
+  orderlyRefCode?: string;
   boundAt?: string;
 };
 
 type GateState = "idle" | "checking" | "bound" | "unbound" | "error" | "binding";
 
 const inviteCodeLength = 6;
-const verifiedInviteAddresses = new Set<string>();
+const verifiedInviteAddresses = new Map<string, string>();
+const verifiedOrderlyRefCodes = new Map<string, boolean>();
 
 export function InviteGate({
   children,
@@ -26,6 +28,7 @@ export function InviteGate({
   const walletConnector = useWalletConnector();
   const address = account.address ?? "";
   const normalizedAddress = normalizeAddress(address);
+  const cachedOrderlyRefCode = normalizedAddress ? verifiedInviteAddresses.get(normalizedAddress) : undefined;
   const isAddressVerified = normalizedAddress ? verifiedInviteAddresses.has(normalizedAddress) : false;
   const [gateState, setGateState] = useState<GateState>(isAddressVerified ? "bound" : "idle");
   const [boundAddress, setBoundAddress] = useState(isAddressVerified ? address : "");
@@ -53,11 +56,13 @@ export function InviteGate({
     if (verifiedInviteAddresses.has(normalizedAddress)) {
       setGateState("bound");
       setBoundAddress(address);
+      void applyOrderlyRefCode(cachedOrderlyRefCode);
+      void checkInviteBinding(address, { silent: true });
       return;
     }
 
     void checkInviteBinding(address);
-  }, [address, normalizedAddress]);
+  }, [address, cachedOrderlyRefCode, normalizedAddress]);
 
   useEffect(() => {
     if (!address) {
@@ -76,20 +81,37 @@ export function InviteGate({
     return children;
   }
 
-  async function checkInviteBinding(nextAddress: string) {
+  async function checkInviteBinding(
+    nextAddress: string,
+    options: {
+      silent?: boolean;
+    } = {}
+  ) {
     try {
-      setGateState("checking");
+      if (!options.silent) {
+        setGateState("checking");
+      }
+
       const response = await fetchPointsJson<InviteBindingResponse>(
         `/points-api/invite-bindings/${nextAddress}`
       );
+      const normalizedNextAddress = normalizeAddress(nextAddress);
 
       setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
-        verifiedInviteAddresses.add(normalizeAddress(nextAddress));
+        verifiedInviteAddresses.set(normalizedNextAddress, response.orderlyRefCode ?? "");
+        void applyOrderlyRefCode(response.orderlyRefCode);
+      } else {
+        verifiedInviteAddresses.delete(normalizedNextAddress);
       }
+
       setBoundAddress(response.bound ? nextAddress : "");
       setMessage(response.bound ? "Invite verified." : "Enter your invite code to unlock Vanta.");
     } catch (error) {
+      if (options.silent) {
+        return;
+      }
+
       setGateState("error");
       setBoundAddress("");
       setMessage(error instanceof Error ? error.message : "Failed to check invite binding.");
@@ -113,7 +135,8 @@ export function InviteGate({
 
       setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
-        verifiedInviteAddresses.add(normalizeAddress(address));
+        verifiedInviteAddresses.set(normalizeAddress(address), response.orderlyRefCode ?? "");
+        void applyOrderlyRefCode(response.orderlyRefCode);
       }
       setBoundAddress(response.bound ? address : "");
       setMessage(response.bound ? "Invite verified." : "Invite code was not bound.");
@@ -229,6 +252,79 @@ function sanitizeCode(value: string) {
 
 function normalizeAddress(address: string) {
   return address.trim().toLowerCase();
+}
+
+async function applyOrderlyRefCode(orderlyRefCode?: string) {
+  const refCode = orderlyRefCode?.trim();
+
+  if (!refCode || typeof window === "undefined") {
+    return;
+  }
+
+  const isValidRefCode = await verifyOrderlyRefCode(refCode);
+
+  if (!isValidRefCode) {
+    removeOrderlyRefCode(refCode);
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  if (url.searchParams.get("ref") === refCode) {
+    return;
+  }
+
+  url.searchParams.set("ref", refCode);
+  window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+}
+
+function removeOrderlyRefCode(refCode: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  if (url.searchParams.get("ref") !== refCode) {
+    return;
+  }
+
+  url.searchParams.delete("ref");
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+async function verifyOrderlyRefCode(refCode: string) {
+  const normalizedRefCode = refCode.trim();
+
+  if (!normalizedRefCode) {
+    return false;
+  }
+
+  const cachedResult = verifiedOrderlyRefCodes.get(normalizedRefCode);
+
+  if (cachedResult !== undefined) {
+    return cachedResult;
+  }
+
+  try {
+    const url = new URL("https://api.orderly.org/v1/public/referral/verify_ref_code");
+    url.searchParams.set("referral_code", normalizedRefCode);
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      verifiedOrderlyRefCodes.set(normalizedRefCode, false);
+      return false;
+    }
+
+    const data = (await response.json()) as { success?: boolean; code?: number };
+    const isValid = data.success !== false && data.code !== -1;
+    verifiedOrderlyRefCodes.set(normalizedRefCode, isValid);
+    return isValid;
+  } catch {
+    verifiedOrderlyRefCodes.set(normalizedRefCode, false);
+    return false;
+  }
 }
 
 function shortenAddress(address: string) {

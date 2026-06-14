@@ -68,6 +68,7 @@ export interface CampaignLeaderboardRow {
 
 export interface InviteCodeRow {
   inviteCode: string;
+  orderlyRefCode: string;
   boundAddress: string;
   boundAt: string;
 }
@@ -76,5 +77,6 @@ export interface InviteBindingResponse {
   bound: boolean;
   address: string;
   inviteCode?: string;
+  orderlyRefCode?: string;
   boundAt?: string;
 }

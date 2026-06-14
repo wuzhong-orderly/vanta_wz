@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { InviteBindingResponse, InviteCodeRow } from "@points-reward/shared";
 
 const inviteCodesCsv = process.env.INVITE_CODES_CSV ?? "invite-codes.csv";
-const inviteHeaders = ["邀请码", "绑定地址", "绑定时间"];
+const inviteHeaders = ["邀请码", "Orderly Ref Code", "绑定地址", "绑定时间"];
 
 const bindInviteSchema = z.object({
   address: z.string().min(1),
@@ -55,6 +55,7 @@ export async function getInviteBinding(address: string): Promise<InviteBindingRe
     bound: true,
     address: row.boundAddress,
     inviteCode: row.inviteCode,
+    orderlyRefCode: row.orderlyRefCode,
     boundAt: row.boundAt
   };
 }
@@ -76,6 +77,7 @@ export async function bindInviteCode(input: unknown): Promise<InviteBindingRespo
         bound: true,
         address: existingAddressRow.boundAddress,
         inviteCode: existingAddressRow.inviteCode,
+        orderlyRefCode: existingAddressRow.orderlyRefCode,
         boundAt: existingAddressRow.boundAt
       };
     }
@@ -99,6 +101,7 @@ export async function bindInviteCode(input: unknown): Promise<InviteBindingRespo
       bound: true,
       address: row.boundAddress,
       inviteCode: row.inviteCode,
+      orderlyRefCode: row.orderlyRefCode,
       boundAt: row.boundAt
     };
   });
@@ -113,6 +116,15 @@ async function readInviteCodeRows() {
 
   const rows = parseCsv(file.content).map((row) => ({
     inviteCode: getCsvValue(row, "邀请码", "invite_code", "inviteCode"),
+    orderlyRefCode: getCsvValue(
+      row,
+      "Orderly Ref Code",
+      "orderly_ref_code",
+      "orderlyRefCode",
+      "ref",
+      "ref_code",
+      "refCode"
+    ),
     boundAddress: getCsvValue(row, "绑定地址", "bound_address", "boundAddress"),
     boundAt: getCsvValue(row, "绑定时间", "bound_at", "boundAt")
   }));
@@ -128,6 +140,7 @@ async function readInviteCodeRows() {
 function toCsvRow(row: InviteCodeRow) {
   return {
     邀请码: row.inviteCode,
+    "Orderly Ref Code": row.orderlyRefCode,
     绑定地址: row.boundAddress,
     绑定时间: row.boundAt
   };
@@ -136,6 +149,7 @@ function toCsvRow(row: InviteCodeRow) {
 function normalizeInviteRows(rows: InviteCodeRow[]) {
   return rows.map((row) => ({
     inviteCode: normalizeInviteCode(row.inviteCode),
+    orderlyRefCode: (row.orderlyRefCode ?? "").trim(),
     boundAddress: row.boundAddress.trim(),
     boundAt: row.boundAt.trim()
   }));

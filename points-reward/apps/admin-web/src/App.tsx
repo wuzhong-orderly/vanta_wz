@@ -340,6 +340,14 @@ export function App() {
       setInviteRows(
         parseCsv(text).map((row) => ({
           inviteCode: (row["邀请码"] ?? row.invite_code ?? row.invitecode ?? "").toUpperCase(),
+          orderlyRefCode:
+            row["Orderly Ref Code"] ??
+            row.orderly_ref_code ??
+            row.orderlyrefcode ??
+            row.ref_code ??
+            row.refcode ??
+            row.ref ??
+            "",
           boundAddress: row["绑定地址"] ?? row.bound_address ?? row.boundaddress ?? "",
           boundAt: row["绑定时间"] ?? row.bound_at ?? row.boundat ?? ""
         }))

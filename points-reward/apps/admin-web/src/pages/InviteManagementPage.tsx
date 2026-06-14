@@ -51,6 +51,7 @@ export function InviteManagementPage({
       : rows.filter(
           (row) =>
             row.inviteCode.toLowerCase().includes(normalizedQuery) ||
+            row.orderlyRefCode.toLowerCase().includes(normalizedQuery) ||
             row.boundAddress.toLowerCase().includes(normalizedQuery)
         );
 
@@ -71,7 +72,7 @@ export function InviteManagementPage({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search code or address"
+            placeholder="Search code, ref, or address"
           />
         </div>
       }
@@ -83,6 +84,7 @@ export function InviteManagementPage({
           ...rows,
           {
             inviteCode: "",
+            orderlyRefCode: "",
             boundAddress: "",
             boundAt: ""
           }
@@ -96,6 +98,7 @@ export function InviteManagementPage({
             inviteHeaders,
             rows.map((row) => ({
               邀请码: row.inviteCode,
+              "Orderly Ref Code": row.orderlyRefCode,
               绑定地址: row.boundAddress,
               绑定时间: row.boundAt
             }))
@@ -167,6 +170,12 @@ function InviteCodeTableRow({
           value={row.inviteCode}
           maxLength={6}
           onChange={(event) => patch({ inviteCode: event.target.value.toUpperCase() })}
+        />
+      </td>
+      <td>
+        <input
+          value={row.orderlyRefCode}
+          onChange={(event) => patch({ orderlyRefCode: event.target.value.trim() })}
         />
       </td>
       <td>

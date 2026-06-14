@@ -61,7 +61,14 @@ export async function getInviteCodes() {
 export async function saveInviteCodes(rows: InviteCodeRow[]) {
   return request<{ rows: InviteCodeRow[] }>("/admin/invite-codes", {
     method: "PUT",
-    body: JSON.stringify({ rows })
+    body: JSON.stringify({
+      rows: rows.map((row) => ({
+        inviteCode: row.inviteCode,
+        orderlyRefCode: row.orderlyRefCode ?? "",
+        boundAddress: row.boundAddress,
+        boundAt: row.boundAt
+      }))
+    })
   });
 }
 

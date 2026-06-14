@@ -80,6 +80,7 @@ export interface LeaderboardRow {
 
 export interface InviteCodeRow {
   inviteCode: string;
+  orderlyRefCode: string;
   boundAddress: string;
   boundAt: string;
 }

@@ -16,7 +16,7 @@ export const distributionHeaders = [
   "remark"
 ];
 
-export const inviteHeaders = ["邀请码", "绑定地址", "绑定时间"];
+export const inviteHeaders = ["邀请码", "Orderly Ref Code", "绑定地址", "绑定时间"];
 
 export const tabs: Array<{ id: Tab; label: string }> = [
   { id: "campaigns", label: "Campaign Management" },

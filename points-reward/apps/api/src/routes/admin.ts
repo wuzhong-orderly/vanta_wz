@@ -57,6 +57,7 @@ const distributionRowSchema = z.object({
 
 const inviteCodeRowSchema = z.object({
   inviteCode: z.string(),
+  orderlyRefCode: z.string().default(""),
   boundAddress: z.string(),
   boundAt: z.string()
 });
