@@ -1,4 +1,4 @@
-import { Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EditableRowsPanel } from "../components/EditableRowsPanel";
 import { inviteHeaders } from "../constants";
@@ -23,24 +23,46 @@ export function InviteManagementPage({
   isSaving?: boolean;
 }) {
   const [query, setQuery] = useState("");
+  const [boundAtSortDirection, setBoundAtSortDirection] = useState<"asc" | "desc">("desc");
+  const headers = useMemo(
+    () =>
+      inviteHeaders.map((header) =>
+        header === "绑定时间" ? (
+          <button
+            className="table-sort-button"
+            onClick={() =>
+              setBoundAtSortDirection((direction) => (direction === "asc" ? "desc" : "asc"))
+            }
+            type="button"
+          >
+            <span>{header}</span>
+            {boundAtSortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+          </button>
+        ) : (
+          header
+        )
+      ),
+    [boundAtSortDirection]
+  );
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
+    const nextRows = !normalizedQuery
+      ? rows
+      : rows.filter(
+          (row) =>
+            row.inviteCode.toLowerCase().includes(normalizedQuery) ||
+            row.boundAddress.toLowerCase().includes(normalizedQuery)
+        );
 
-    if (!normalizedQuery) {
-      return rows;
-    }
-
-    return rows.filter(
-      (row) =>
-        row.inviteCode.toLowerCase().includes(normalizedQuery) ||
-        row.boundAddress.toLowerCase().includes(normalizedQuery)
+    return [...nextRows].sort((left, right) =>
+      compareBoundAt(left.boundAt, right.boundAt, boundAtSortDirection)
     );
-  }, [query, rows]);
+  }, [boundAtSortDirection, query, rows]);
 
   return (
     <EditableRowsPanel
       title="Invite Management"
-      headers={inviteHeaders}
+      headers={headers}
       rows={filteredRows}
       allRows={rows}
       extraControl={
@@ -91,6 +113,36 @@ export function InviteManagementPage({
       )}
     />
   );
+}
+
+function compareBoundAt(left: string, right: string, direction: "asc" | "desc") {
+  const leftValue = dateSortValue(left);
+  const rightValue = dateSortValue(right);
+
+  if (leftValue === rightValue) {
+    return 0;
+  }
+
+  if (leftValue === Number.POSITIVE_INFINITY) {
+    return 1;
+  }
+
+  if (rightValue === Number.POSITIVE_INFINITY) {
+    return -1;
+  }
+
+  return direction === "asc" ? leftValue - rightValue : rightValue - leftValue;
+}
+
+function dateSortValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const timestamp = Date.parse(trimmedValue);
+  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
 }
 
 function InviteCodeTableRow({

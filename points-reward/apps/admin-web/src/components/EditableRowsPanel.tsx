@@ -20,7 +20,7 @@ export function EditableRowsPanel<T>({
   renderRow
 }: {
   title: string;
-  headers: string[];
+  headers: ReactNode[];
   rows: T[];
   allRows: T[];
   extraControl?: ReactNode;
@@ -89,8 +89,8 @@ export function EditableRowsPanel<T>({
         <table>
           <thead>
             <tr>
-              {headers.map((header) => (
-                <th key={header}>{header}</th>
+              {headers.map((header, index) => (
+                <th key={index}>{header}</th>
               ))}
               <th></th>
             </tr>
