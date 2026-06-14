@@ -263,6 +263,7 @@ export default function PointsIndex() {
             locale={locale}
           />
           <PointMetricWithSelect
+            title={t("points.campaignHistory", "Campaign history")}
             value={selectedPastPoints}
             locale={locale}
             selectLabel={t("points.selectPastPoints", "Select past points")}
@@ -379,6 +380,7 @@ function PointMetric({
 }
 
 function PointMetricWithSelect({
+  title,
   value,
   locale,
   selectLabel,
@@ -386,6 +388,7 @@ function PointMetricWithSelect({
   onChange,
   options
 }: {
+  title: string;
   value: string;
   locale: string;
   selectLabel: string;
@@ -398,19 +401,23 @@ function PointMetricWithSelect({
 }) {
   return (
     <div className="points-metric">
-      <select
-        aria-label={selectLabel}
-        className="points-select points-metric-select points-metric-title-select"
-        onChange={(event) => onChange(event.target.value as "total" | `campaign-${number}`)}
-        value={valueMode}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <span>{title}</span>
       <strong>{formatPoints(value, locale)}</strong>
+      <div className="points-select-wrap">
+        <select
+          aria-label={selectLabel}
+          className="points-select points-metric-select points-metric-title-select"
+          onChange={(event) => onChange(event.target.value as "total" | `campaign-${number}`)}
+          value={valueMode}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span aria-hidden="true">{options.find((option) => option.value === valueMode)?.label}</span>
+      </div>
     </div>
   );
 }

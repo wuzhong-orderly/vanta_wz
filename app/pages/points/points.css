@@ -224,9 +224,10 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   display: grid;
-  gap: 8px;
+  gap: 1px;
+  grid-template-rows: 30px 46px minmax(34px, auto);
   min-height: 112px;
-  padding: 16px;
+  padding: 9px;
 }
 
 [data-oui-theme="light"] .points-metric {
@@ -243,11 +244,13 @@
 }
 
 .points-metric strong {
+  align-self: center;
   font-size: 26px;
   line-height: 1.1;
 }
 
 .points-metric small {
+  align-self: start;
   font-size: 12px;
 }
 
@@ -271,14 +274,60 @@
 }
 
 .points-metric-select {
+  height: 100%;
+  inset: 0;
+  min-height: 0;
   min-width: 0;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
   width: 100%;
+}
+
+.points-select-wrap {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgb(var(--oui-color-base-contrast));
+  cursor: pointer;
+  align-self: start;
+  min-height: 34px;
+  min-width: 0;
+  padding: 7px 28px 7px 10px;
+  position: relative;
+  width: 100%;
+}
+
+.points-select-wrap::after {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid rgba(var(--oui-color-base-contrast), 0.72);
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.points-select-wrap > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+[data-oui-theme="light"] .points-select-wrap {
+  background: rgba(0, 0, 0, 0.035);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .points-title-select,
 .points-metric-title-select {
-  font-size: 18px;
-  font-weight: 760;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .points-title-select {
