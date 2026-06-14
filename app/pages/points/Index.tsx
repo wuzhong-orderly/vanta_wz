@@ -58,6 +58,9 @@ type DisplayLeaderboardRow = LeaderboardRow | CampaignLeaderboardRow;
 type LeaderboardMode = "total" | `campaign-${number}`;
 type LoadState = "idle" | "loading" | "error";
 
+const MAX_LEADERBOARD_ITEMS = 100;
+const LEADERBOARD_PAGE_SIZE = 20;
+
 const POINTS_API_BASE_URL =
   (getRuntimeConfig("VITE_POINTS_API_BASE_URL") || "").replace(/\/+$/, "");
 
@@ -72,6 +75,7 @@ export default function PointsIndex() {
   const [campaign, setCampaign] = useState<CampaignConfig | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignConfig[]>([]);
   const [leaderboard, setLeaderboard] = useState<DisplayLeaderboardRow[]>([]);
+  const [leaderboardPage, setLeaderboardPage] = useState(1);
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>("total");
   const [userPoints, setUserPoints] = useState<UserPointsResponse | null>(null);
   const [campaignPoints, setCampaignPoints] = useState<CampaignPointsRow[]>([]);
@@ -89,8 +93,19 @@ export default function PointsIndex() {
     void loadLeaderboard(leaderboardMode);
   }, [leaderboardMode]);
 
-  const topThree = useMemo(() => leaderboard.slice(0, 3), [leaderboard]);
-  const tableRows = useMemo(() => leaderboard.slice(0, 100), [leaderboard]);
+  const topHundredRows = useMemo(
+    () => leaderboard.slice(0, MAX_LEADERBOARD_ITEMS),
+    [leaderboard]
+  );
+  const topThree = useMemo(() => topHundredRows.slice(0, 3), [topHundredRows]);
+  const leaderboardTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(topHundredRows.length / LEADERBOARD_PAGE_SIZE)),
+    [topHundredRows.length]
+  );
+  const tableRows = useMemo(() => {
+    const startIndex = (leaderboardPage - 1) * LEADERBOARD_PAGE_SIZE;
+    return topHundredRows.slice(startIndex, startIndex + LEADERBOARD_PAGE_SIZE);
+  }, [leaderboardPage, topHundredRows]);
   const userRank = useMemo(() => {
     if (!lookupAddress) {
       return null;
@@ -113,6 +128,10 @@ export default function PointsIndex() {
     );
   }, [campaignPoints, pastPointsMode, userPoints?.totalPoint]);
   const isCampaignLeaderboard = leaderboardMode !== "total";
+
+  useEffect(() => {
+    setLeaderboardPage(1);
+  }, [leaderboardMode, topHundredRows.length]);
 
   async function loadPageData(address = lookupAddress) {
     try {
@@ -297,11 +316,6 @@ export default function PointsIndex() {
                 </option>
               ))}
             </select>
-            <span>
-              {loadState === "loading"
-                ? t("common.loading", "Loading")
-                : `${leaderboard.length} ${t("points.users", "users")}`}
-            </span>
           </div>
 
           <div className="points-podium">
@@ -352,6 +366,30 @@ export default function PointsIndex() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="points-pagination">
+            <button
+              className="points-icon-button"
+              disabled={leaderboardPage <= 1 || loadState === "loading"}
+              onClick={() => setLeaderboardPage((prev) => Math.max(1, prev - 1))}
+              type="button"
+            >
+              {t("common.previous", "Previous")}
+            </button>
+            <span>
+              {t("points.page", "Page")} {leaderboardPage} / {leaderboardTotalPages}
+            </span>
+            <button
+              className="points-icon-button"
+              disabled={leaderboardPage >= leaderboardTotalPages || loadState === "loading"}
+              onClick={() =>
+                setLeaderboardPage((prev) => Math.min(leaderboardTotalPages, prev + 1))
+              }
+              type="button"
+            >
+              {t("common.next", "Next")}
+            </button>
           </div>
         </section>
       </div>

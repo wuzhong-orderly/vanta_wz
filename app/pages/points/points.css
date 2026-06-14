@@ -418,6 +418,28 @@
   font-size: 22px;
 }
 
+.points-pagination {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.points-pagination span {
+  color: rgba(var(--oui-color-base-contrast), 0.62);
+  font-size: 13px;
+}
+
+.points-pagination .points-icon-button {
+  min-width: 88px;
+  padding: 0 12px;
+}
+
+.points-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .points-table-wrap {
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 8px;
@@ -493,6 +515,10 @@
   .points-user-breakdown,
   .points-podium {
     grid-template-columns: 1fr;
+  }
+
+  .points-pagination {
+    justify-content: space-between;
   }
 
   .points-lookup {
