@@ -314,8 +314,8 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       )}
       style={{
         bottom: 0,
-        minWidth:
-          (max2XL ? 1024 : 1440) - scrollBarWidth - containerPaddingX * 2,
+        minWidth: 0,
+        width: "100%",
       }}
     >
       {horizontalMarketsView}
@@ -643,12 +643,12 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
               ref={props.max2XLSplitRef}
               style={{
                 minHeight: minScreenHeightSM,
-                minWidth: 1024 - scrollBarWidth,
+                minWidth: `min(${1024 - scrollBarWidth}px, 100%)`,
                 // height: props.extraHeight ? props.extraHeight : undefined,
               }}
               className={cn(
                 "oui-flex oui-flex-1",
-                "oui-size-full oui-min-w-[1018px]",
+                "oui-size-full oui-min-w-0",
                 "oui-px-3 oui-py-2",
                 props.className,
               )}
@@ -664,6 +664,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                   layout === "left" && "oui-flex-row-reverse",
                 )}
                 style={{
+                  minWidth: 0,
                   minHeight: Math.max(
                     symbolInfoBarHeight +
                     tradindviewMinHeight +
@@ -680,7 +681,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
               >
                 <Flex
                   height="100%"
-                  className="oui-w-[calc(100%_-_280px_-_12px)] oui-flex-1"
+                  className="oui-flex-1 oui-min-w-0"
                   direction="column"
                   gapY={2}
                 >
@@ -720,8 +721,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                     <SplitLayout
                       ref={props.tradingviewAndOrderbookSplitRef}
                       mode="vertical"
-                      style={{ width: `calc(100% - ${marketsWidth}px)` }}
-                      className="oui-flex-1"
+                      className="oui-flex-1 oui-min-w-0"
                       onSizeChange={setOrderbookSplitHeightSM}
                       onDragging={props.onTradingviewAndOrderbookDragging}
                     >

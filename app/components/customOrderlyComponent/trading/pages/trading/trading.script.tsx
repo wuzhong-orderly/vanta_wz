@@ -66,8 +66,8 @@ export const useTradingScript = () => {
 
   const total = useDataTap(totalValue);
 
-  /** max-width: 1279px */
-  const max2XL = useMediaQuery("(max-width: 1279px)");
+  /** max-width: 1500px */
+  const max2XL = useMediaQuery("(max-width: 1500px)");
 
   /** min-width: 1440px */
   const min3XL = useMediaQuery("(min-width: 1440px)");
