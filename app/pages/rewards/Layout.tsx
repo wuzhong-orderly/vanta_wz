@@ -1,6 +1,7 @@
 import { Scaffold } from "@orderly.network/ui-scaffold";
 import { Outlet } from "react-router-dom";
 
+import { InviteGate } from "@/components/InviteGate";
 import { useOrderlyConfig } from "@/utils/config";
 import { useNav } from "@/hooks/useNav";
 
@@ -24,8 +25,9 @@ export default function RewardsLayout() {
       }}
       bottomNavProps={config.scaffold.bottomNavProps}
     >
-      <Outlet />
+      <InviteGate>
+        <Outlet />
+      </InviteGate>
     </Scaffold>
   );
 }
-

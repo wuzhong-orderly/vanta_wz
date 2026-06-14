@@ -13,17 +13,29 @@ type InviteBindingResponse = {
 type GateState = "idle" | "checking" | "bound" | "unbound" | "error" | "binding";
 
 const inviteCodeLength = 6;
+const verifiedInviteAddresses = new Set<string>();
 
-export function InviteGate({ children }: { children: ReactNode }) {
+export function InviteGate({
+  children,
+  onLockedChange
+}: {
+  children: ReactNode;
+  onLockedChange?: (locked: boolean) => void;
+}) {
   const { account } = useAccount();
   const walletConnector = useWalletConnector();
   const address = account.address ?? "";
-  const [gateState, setGateState] = useState<GateState>("idle");
+  const normalizedAddress = normalizeAddress(address);
+  const isAddressVerified = normalizedAddress ? verifiedInviteAddresses.has(normalizedAddress) : false;
+  const [gateState, setGateState] = useState<GateState>(isAddressVerified ? "bound" : "idle");
+  const [boundAddress, setBoundAddress] = useState(isAddressVerified ? address : "");
   const [code, setCode] = useState<string[]>(Array(inviteCodeLength).fill(""));
   const [message, setMessage] = useState("");
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const inviteCode = useMemo(() => code.join(""), [code]);
+  const isBoundForAddress =
+    gateState === "bound" && normalizeAddress(boundAddress) === normalizedAddress;
   const canEditCode = Boolean(address) && gateState === "unbound";
   const canBind = canEditCode && inviteCode.length === inviteCodeLength;
   const isBusy = gateState === "checking" || gateState === "binding";
@@ -31,16 +43,36 @@ export function InviteGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     setCode(Array(inviteCodeLength).fill(""));
     setMessage("");
+    setBoundAddress("");
 
     if (!address) {
       setGateState("idle");
       return;
     }
 
-    void checkInviteBinding(address);
-  }, [address]);
+    if (verifiedInviteAddresses.has(normalizedAddress)) {
+      setGateState("bound");
+      setBoundAddress(address);
+      return;
+    }
 
-  if (gateState === "bound") {
+    void checkInviteBinding(address);
+  }, [address, normalizedAddress]);
+
+  useEffect(() => {
+    if (!address) {
+      onLockedChange?.(true);
+      return;
+    }
+
+    if (gateState === "idle" || gateState === "checking") {
+      return;
+    }
+
+    onLockedChange?.(!isBoundForAddress);
+  }, [address, gateState, isBoundForAddress, onLockedChange]);
+
+  if (isBoundForAddress) {
     return children;
   }
 
@@ -52,9 +84,14 @@ export function InviteGate({ children }: { children: ReactNode }) {
       );
 
       setGateState(response.bound ? "bound" : "unbound");
-      setMessage(response.bound ? "Invite verified." : "Enter your invite code to unlock trading.");
+      if (response.bound) {
+        verifiedInviteAddresses.add(normalizeAddress(nextAddress));
+      }
+      setBoundAddress(response.bound ? nextAddress : "");
+      setMessage(response.bound ? "Invite verified." : "Enter your invite code to unlock Vanta.");
     } catch (error) {
       setGateState("error");
+      setBoundAddress("");
       setMessage(error instanceof Error ? error.message : "Failed to check invite binding.");
     }
   }
@@ -75,9 +112,14 @@ export function InviteGate({ children }: { children: ReactNode }) {
       });
 
       setGateState(response.bound ? "bound" : "unbound");
+      if (response.bound) {
+        verifiedInviteAddresses.add(normalizeAddress(address));
+      }
+      setBoundAddress(response.bound ? address : "");
       setMessage(response.bound ? "Invite verified." : "Invite code was not bound.");
     } catch (error) {
       setGateState("unbound");
+      setBoundAddress("");
       setMessage(error instanceof Error ? error.message : "Failed to bind invite code.");
     }
   }
@@ -124,7 +166,7 @@ export function InviteGate({ children }: { children: ReactNode }) {
         </div>
         <div className="invite-copy">
           <span>Invite required</span>
-          <h1>Unlock Vanta trading</h1>
+          <h1>Unlock Vanta</h1>
           <p>
             Connect your wallet first. If this address has not been invited yet, enter a 6-character
             invite code to continue.
@@ -183,6 +225,10 @@ export function InviteGate({ children }: { children: ReactNode }) {
 
 function sanitizeCode(value: string) {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, inviteCodeLength);
+}
+
+function normalizeAddress(address: string) {
+  return address.trim().toLowerCase();
 }
 
 function shortenAddress(address: string) {

@@ -1,9 +1,11 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { PortfolioLayoutWidget } from "@orderly.network/portfolio";
 import { useTranslation } from "@orderly.network/i18n";
+import { Scaffold } from "@orderly.network/ui-scaffold";
+import { InviteGate } from "@/components/InviteGate";
 import { useOrderlyConfig } from "@/utils/config";
 import { useNav } from "@/hooks/useNav";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const iconClass = "oui-fill-current group-data-[actived=true]:oui-fill-[url(#side-menu-gradient)]";
 
@@ -14,6 +16,7 @@ export default function PortfolioLayout() {
 
   const { onRouteChange } = useNav();
   const config = useOrderlyConfig();
+  const [isInviteLocked, setIsInviteLocked] = useState(true);
 
   const sidebarItems = useMemo(() => [
     {
@@ -82,6 +85,26 @@ export default function PortfolioLayout() {
     },
   ], [t]);
 
+  if (isInviteLocked) {
+    return (
+      <Scaffold
+        mainNavProps={{
+          ...config.scaffold.mainNavProps,
+          initialMenu: "/portfolio",
+        }}
+        footerProps={config.scaffold.footerProps}
+        routerAdapter={{
+          onRouteChange,
+        }}
+        bottomNavProps={config.scaffold.bottomNavProps}
+      >
+        <InviteGate onLockedChange={setIsInviteLocked}>
+          <Outlet />
+        </InviteGate>
+      </Scaffold>
+    );
+  }
+
   return (
     <PortfolioLayoutWidget
       footerProps={config.scaffold.footerProps}
@@ -98,8 +121,9 @@ export default function PortfolioLayout() {
       }}
       bottomNavProps={config.scaffold.bottomNavProps}
     >
-      <Outlet />
+      <InviteGate onLockedChange={setIsInviteLocked}>
+        <Outlet />
+      </InviteGate>
     </PortfolioLayoutWidget>
   );
 }
-
