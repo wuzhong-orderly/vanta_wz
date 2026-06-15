@@ -421,7 +421,7 @@ export const useOrderlyConfig = () => {
 
     const mainNavProps: MainNavWidgetProps = {
       initialMenu: "/",
-      mainMenus: allMenuItems,
+      mainMenus: isMobile ? mobileMenus : allMenuItems,
     };
 
     mainNavProps.customRender = (components) => {
