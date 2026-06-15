@@ -4,6 +4,10 @@ import {
   clearAdminToken,
   endCampaign,
   getAdminToken,
+  getBrokerMarketStats,
+  getBrokerOverviewStats,
+  getBrokerRiskStats,
+  getBrokerUserStats,
   getDistribution,
   getInviteCodes,
   getOrderlyStages,
@@ -20,6 +24,7 @@ import {
 import { tabs } from "./constants";
 import { parseCsv } from "./csv";
 import { CampaignManagementPage } from "./pages/CampaignManagementPage";
+import { BrokerStatsPage } from "./pages/BrokerStatsPage";
 import { CurrentPointsPage } from "./pages/CurrentPointsPage";
 import { DistributionPage } from "./pages/DistributionPage";
 import { InviteManagementPage } from "./pages/InviteManagementPage";
@@ -27,6 +32,10 @@ import { SettlementPage } from "./pages/SettlementPage";
 import type {
   CampaignConfig,
   CampaignDistributionRow,
+  BrokerMarketStats,
+  BrokerOverviewStats,
+  BrokerRiskStats,
+  BrokerUserStats,
   CampaignRegistry,
   InviteBindingRow,
   InviteCodeRow,
@@ -48,10 +57,11 @@ type BusyAction =
   | "import-invites"
   | "import-settled"
   | "pull-orderly"
-  | "end-campaign";
+  | "end-campaign"
+  | "load-stats";
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>("campaigns");
+  const [activeTab, setActiveTab] = useState<Tab>("stats");
   const [status, setStatus] = useState<Status>("Idle");
   const [busyAction, setBusyAction] = useState<BusyAction | null>(null);
   const [message, setMessage] = useState("");
@@ -60,8 +70,16 @@ export function App() {
   const [distributionRows, setDistributionRows] = useState<CampaignDistributionRow[]>([]);
   const [inviteRows, setInviteRows] = useState<InviteCodeRow[]>([]);
   const [inviteBindings, setInviteBindings] = useState<InviteBindingRow[]>([]);
+  const [statsBrokerId, setStatsBrokerId] = useState("vanta_exchange");
+  const [statsStartDate, setStatsStartDate] = useState(() => formatDateInput(addDays(new Date(), -29)));
+  const [statsEndDate, setStatsEndDate] = useState(() => formatDateInput(new Date()));
+  const [brokerOverviewStats, setBrokerOverviewStats] = useState<BrokerOverviewStats | null>(null);
+  const [brokerMarketStats, setBrokerMarketStats] = useState<BrokerMarketStats | null>(null);
+  const [brokerRiskStats, setBrokerRiskStats] = useState<BrokerRiskStats | null>(null);
+  const [brokerUserStats, setBrokerUserStats] = useState<BrokerUserStats | null>(null);
   const [selectedCampaignNumber, setSelectedCampaignNumber] = useState<number | null>(null);
   const [adminToken, setAdminTokenState] = useState(() => getAdminToken());
+  const settlementLoadingAction = busyAction === "load-stats" ? null : busyAction;
 
   useEffect(() => {
     if (adminToken) {
@@ -89,6 +107,12 @@ export function App() {
     }
   }, [adminToken, selectedCampaignNumber]);
 
+  useEffect(() => {
+    if (adminToken && activeTab === "stats") {
+      void loadBrokerStats(statsBrokerId, statsStartDate, statsEndDate);
+    }
+  }, [activeTab, adminToken]);
+
   const activeTitle = tabs.find((tab) => tab.id === activeTab)?.label ?? "Points Operations";
 
   function handleAdminLogin(token: string) {
@@ -114,6 +138,10 @@ export function App() {
     setDistributionRows([]);
     setInviteRows([]);
     setInviteBindings([]);
+    setBrokerOverviewStats(null);
+    setBrokerMarketStats(null);
+    setBrokerRiskStats(null);
+    setBrokerUserStats(null);
     setSelectedCampaignNumber(null);
     setStatus("Idle");
     setMessage("");
@@ -277,6 +305,51 @@ export function App() {
       setMessage(
         `Special points saved for ${response.rows.length} rows; settled and total points recalculated`
       );
+    } catch (error) {
+      setStatus("Error");
+      setMessage(getErrorMessage(error));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function loadBrokerStats(brokerId: string, startDate: string, endDate: string) {
+    const trimmedBrokerId = brokerId.trim();
+
+    if (!trimmedBrokerId) {
+      setStatus("Error");
+      setMessage("Broker ID is required");
+      return;
+    }
+
+    const validationMessage = validateStatsDateRange(startDate, endDate);
+
+    if (validationMessage) {
+      setStatus("Error");
+      setMessage(validationMessage);
+      return;
+    }
+
+    try {
+      setStatus("Loading");
+      setBusyAction("load-stats");
+      setStatsBrokerId(trimmedBrokerId);
+      setStatsStartDate(startDate);
+      setStatsEndDate(endDate);
+
+      const [overview, markets, risk, users] = await Promise.all([
+        getBrokerOverviewStats(trimmedBrokerId, startDate, endDate),
+        getBrokerMarketStats(trimmedBrokerId),
+        getBrokerRiskStats(trimmedBrokerId),
+        getBrokerUserStats(trimmedBrokerId, startDate, endDate)
+      ]);
+
+      setBrokerOverviewStats(overview);
+      setBrokerMarketStats(markets);
+      setBrokerRiskStats(risk);
+      setBrokerUserStats(users);
+      setStatus("Idle");
+      setMessage(`Loaded broker stats for ${trimmedBrokerId}`);
     } catch (error) {
       setStatus("Error");
       setMessage(getErrorMessage(error));
@@ -591,7 +664,7 @@ export function App() {
               onLoadStages={(brokerId) => getOrderlyStages(brokerId)}
               onPullOrderly={(options) => handlePullOrderly(options)}
               onEndCampaign={() => void handleEndCampaign()}
-              loadingAction={busyAction}
+              loadingAction={settlementLoadingAction}
             />
           ) : null}
 
@@ -621,6 +694,20 @@ export function App() {
               isLoading={busyAction === "load-distribution"}
               isImporting={busyAction === "import-csv"}
               isSaving={busyAction === "save-distribution"}
+            />
+          ) : null}
+
+          {activeTab === "stats" ? (
+            <BrokerStatsPage
+              brokerId={statsBrokerId}
+              endDate={statsEndDate}
+              loading={busyAction === "load-stats"}
+              markets={brokerMarketStats}
+              onRefresh={loadBrokerStats}
+              overview={brokerOverviewStats}
+              risk={brokerRiskStats}
+              startDate={statsStartDate}
+              users={brokerUserStats}
             />
           ) : null}
 
@@ -788,4 +875,43 @@ function syncCurrentCampaignNumber(registry: CampaignRegistry): CampaignRegistry
     ...registry,
     currentCampaignNumber: currentCampaign?.campaignNumber ?? registry.currentCampaignNumber
   };
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function validateStatsDateRange(startDate: string, endDate: string) {
+  if (!startDate || !endDate) {
+    return "Start date and end date are required";
+  }
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return "Stats date range is invalid";
+  }
+
+  if (start > end) {
+    return "Start date must be before end date";
+  }
+
+  const days = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1;
+
+  if (days > 90) {
+    return "Stats date range must be 90 days or less";
+  }
+
+  return "";
 }

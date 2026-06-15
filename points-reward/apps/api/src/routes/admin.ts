@@ -15,6 +15,12 @@ import {
   saveRegistry
 } from "../lib/campaign-store.js";
 import { getInviteAdminData, saveInviteAdminData } from "../lib/invite-store.js";
+import {
+  getBrokerMarketStats,
+  getBrokerOverviewStats,
+  getBrokerRiskStats,
+  getBrokerUserStats
+} from "../lib/orderly-stats.js";
 
 const campaignSchema = z.object({
   campaignNumber: z.number().int().positive(),
@@ -78,6 +84,12 @@ const importOrderlySchema = z.object({
   maxPages: z.number().int().positive().max(100).optional()
 });
 
+const statsRangeQuerySchema = z.object({
+  broker_id: z.string().min(1),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
 export async function registerAdminRoutes(app: FastifyInstance) {
   app.addHook("preHandler", async (request, reply) => {
     if (!request.url.startsWith("/admin/")) {
@@ -109,6 +121,40 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   }));
 
   app.get("/admin/invite-codes", async () => getInviteAdminData());
+
+  app.get("/admin/stats/broker/overview", async (request) => {
+    const { broker_id, start_date, end_date } = statsRangeQuerySchema.parse(request.query);
+
+    return getBrokerOverviewStats(broker_id, {
+      startDate: start_date,
+      endDate: end_date
+    });
+  });
+
+  app.get("/admin/stats/broker/markets", async (request) => {
+    const { broker_id } = z
+      .object({ broker_id: z.string().min(1) })
+      .parse(request.query);
+
+    return getBrokerMarketStats(broker_id);
+  });
+
+  app.get("/admin/stats/broker/risk", async (request) => {
+    const { broker_id } = z
+      .object({ broker_id: z.string().min(1) })
+      .parse(request.query);
+
+    return getBrokerRiskStats(broker_id);
+  });
+
+  app.get("/admin/stats/broker/users", async (request) => {
+    const { broker_id, start_date, end_date } = statsRangeQuerySchema.parse(request.query);
+
+    return getBrokerUserStats(broker_id, {
+      startDate: start_date,
+      endDate: end_date
+    });
+  });
 
   app.put("/admin/invite-codes", async (request) => {
     const { rows, bindings } = z

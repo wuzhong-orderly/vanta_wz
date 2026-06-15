@@ -771,6 +771,80 @@ td input {
   padding: 9px 10px;
 }
 
+.stats-page {
+  gap: 12px;
+}
+
+.stats-toolbar {
+  flex-wrap: wrap;
+}
+
+.stats-broker-input {
+  min-width: 240px;
+}
+
+.stats-date-input {
+  min-width: 156px;
+}
+
+.stats-tabs {
+  margin-top: 2px;
+}
+
+.stats-metrics-grid {
+  margin-bottom: 0;
+}
+
+.stats-metrics-wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stats-section-title {
+  color: #253040;
+  font-size: 13px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.stats-message-divider {
+  background: #cfd6df;
+  display: inline-block;
+  height: 12px;
+  margin: 0 10px;
+  vertical-align: -2px;
+  width: 1px;
+}
+
+.stats-table-wrap {
+  max-height: calc(100vh - 380px);
+}
+
+.side-chip {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  justify-content: center;
+  min-width: 54px;
+  padding: 3px 8px;
+}
+
+.side-chip.long {
+  background: #e6f4ed;
+  color: #146c43;
+}
+
+.side-chip.short {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.empty-table-cell {
+  color: #677384;
+  height: 72px;
+  text-align: center;
+}
+
 .inline-message.error {
   background: #fff1f2;
   border-color: #fecdd3;
@@ -819,6 +893,18 @@ td input {
 
   .orderly-meta-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stats-broker-input {
+    min-width: 100%;
+  }
+
+  .stats-date-input {
+    min-width: 100%;
+  }
+
+  .stats-metrics-wide {
+    grid-template-columns: 1fr 1fr;
   }
 
   .span-2 {

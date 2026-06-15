@@ -1,5 +1,9 @@
 import type {
   AllocationPreview,
+  BrokerMarketStats,
+  BrokerOverviewStats,
+  BrokerRiskStats,
+  BrokerUserStats,
   CampaignDistributionRow,
   CampaignRegistry,
   InviteBindingRow,
@@ -158,6 +162,34 @@ export async function saveDistribution(
 
 export async function getLeaderboard() {
   return request<{ items: LeaderboardRow[] }>("/api/leaderboard/total");
+}
+
+export async function getBrokerOverviewStats(brokerId: string, startDate: string, endDate: string) {
+  const params = new URLSearchParams({
+    broker_id: brokerId,
+    start_date: startDate,
+    end_date: endDate
+  });
+  return request<BrokerOverviewStats>(`/admin/stats/broker/overview?${params.toString()}`);
+}
+
+export async function getBrokerMarketStats(brokerId: string) {
+  const params = new URLSearchParams({ broker_id: brokerId });
+  return request<BrokerMarketStats>(`/admin/stats/broker/markets?${params.toString()}`);
+}
+
+export async function getBrokerRiskStats(brokerId: string) {
+  const params = new URLSearchParams({ broker_id: brokerId });
+  return request<BrokerRiskStats>(`/admin/stats/broker/risk?${params.toString()}`);
+}
+
+export async function getBrokerUserStats(brokerId: string, startDate: string, endDate: string) {
+  const params = new URLSearchParams({
+    broker_id: brokerId,
+    start_date: startDate,
+    end_date: endDate
+  });
+  return request<BrokerUserStats>(`/admin/stats/broker/users?${params.toString()}`);
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
