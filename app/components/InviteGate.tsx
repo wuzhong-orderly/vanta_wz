@@ -98,14 +98,14 @@ export function InviteGate({
       );
       const normalizedNextAddress = normalizeAddress(nextAddress);
 
-      setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
         verifiedInviteAddresses.set(normalizedNextAddress, response.orderlyRefCode ?? "");
-        void applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
+        await applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
       } else {
         verifiedInviteAddresses.delete(normalizedNextAddress);
       }
 
+      setGateState(response.bound ? "bound" : "unbound");
       setBoundAddress(response.bound ? nextAddress : "");
       setMessage(response.bound ? "Invite verified." : "Enter your invite code to unlock Vanta.");
     } catch (error) {
@@ -134,11 +134,11 @@ export function InviteGate({
         })
       });
 
-      setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
         verifiedInviteAddresses.set(normalizeAddress(address), response.orderlyRefCode ?? "");
-        void applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
+        await applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
       }
+      setGateState(response.bound ? "bound" : "unbound");
       setBoundAddress(response.bound ? address : "");
       setMessage(response.bound ? "Invite verified." : "Invite code was not bound.");
     } catch (error) {
@@ -259,33 +259,37 @@ async function applyOrderlyRefCode(orderlyRefCode?: string, accountId?: string) 
   const refCode = orderlyRefCode?.trim();
 
   if (!refCode || typeof window === "undefined") {
-    return;
+    return undefined;
   }
 
   // If account already has a bound referral code, don't force another one.
   if (accountId) {
     const hasBoundRefCode = await hasOrderlyBoundReferralCode(accountId);
     if (hasBoundRefCode) {
-      return;
+      return undefined;
     }
   }
 
   const url = new URL(window.location.href);
+  const existingRefCode = url.searchParams.get("ref")?.trim();
 
   // Never override existing URL ref code.
-  if (url.searchParams.get("ref")?.trim()) {
-    return;
+  if (existingRefCode) {
+    localStorage.setItem("referral_code", existingRefCode);
+    return existingRefCode;
   }
 
   const isValidRefCode = await verifyOrderlyRefCode(refCode);
 
   if (!isValidRefCode) {
     // Backend ref code may not exist in Orderly yet; skip silently.
-    return;
+    return undefined;
   }
 
+  localStorage.setItem("referral_code", refCode);
   url.searchParams.set("ref", refCode);
   window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  return refCode;
 }
 
 async function hasOrderlyBoundReferralCode(accountId: string) {

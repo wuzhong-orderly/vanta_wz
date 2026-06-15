@@ -29,7 +29,7 @@ function InviteUnlockRedirect({ redirectPath }: { redirectPath: string }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate(redirectPath, { replace: true });
+    navigate(withPendingReferralCode(redirectPath), { replace: true });
   }, [navigate, redirectPath]);
 
   return null;
@@ -47,4 +47,24 @@ function sanitizeRedirectPath(redirectPath: string | null) {
   }
 
   return redirectPath;
+}
+
+function withPendingReferralCode(path: string) {
+  if (typeof window === "undefined") {
+    return path;
+  }
+
+  const refCode = localStorage.getItem("referral_code")?.trim();
+
+  if (!refCode) {
+    return path;
+  }
+
+  const url = new URL(path, window.location.origin);
+
+  if (!url.searchParams.get("ref")?.trim()) {
+    url.searchParams.set("ref", refCode);
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }
