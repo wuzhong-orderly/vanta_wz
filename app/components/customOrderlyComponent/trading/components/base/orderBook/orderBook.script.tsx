@@ -171,6 +171,8 @@ export const useOrderBookScript = (props: {
     lastPrice: data?.middlePrice,
     depths,
     selDepth,
+    /** Canonical API / route symbol (do not reconstruct from base+quote). */
+    symbol,
     base,
     quote,
     isLoading,

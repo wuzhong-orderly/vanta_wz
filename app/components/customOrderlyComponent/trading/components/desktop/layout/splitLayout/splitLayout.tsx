@@ -10,7 +10,7 @@ export const SplitLayout = forwardRef<Split, SplitLayoutProps>((props, ref) => {
   const { onSizeChange, ...rest } = props;
   return (
     <Split
-      ref={ref}
+      ref={ref as any}
       {...rest}
       lineBar
       renderBar={(barProps) => <SplitLineBar {...barProps} mode={props.mode} />}

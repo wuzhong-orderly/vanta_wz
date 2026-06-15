@@ -63,7 +63,7 @@ export const AccountInfo: FC<AccountSheetState> = (props) => {
             intensity={80}
             // @ts-ignore
             prefix={
-              <div className="oui-h-1 oui-w-1 oui-rounded-full oui-bg-success oui-pr-1" />
+              <div className="oui-h-1 oui-w-1 oui-rounded-full oui-bg-success oui-pe-1" />
             }
           >
             {props.chainName}

@@ -1,9 +1,33 @@
-// Re-export the official SDK trading package as the base implementation.
-// This keeps local imports stable while avoiding drift from upstream v3.1.0.
-export * from "@orderly.network/trading";
+/**
+ * Side-effect: augment InterceptorTargetPropsMap for typed interceptor props.
+ */
+import "./types/interceptorTargets";
 
-// Override TradingPage with the local customized implementation.
-export { TradingPage } from "./pages/trading";
+export type {
+  ShareOptions,
+  TradingPageProps,
+  ReferralProps,
+  TradingRewardsProps,
+} from "./types/types";
 
-// Keep project-specific hooks that are not part of the public SDK exports.
+export type { Props as OrderBookDesktopAsksProps } from "./components/desktop/orderBook/asks.desktop";
+export type { Props as OrderBookDesktopBidsProps } from "./components/desktop/orderBook/bids.desktop";
+export type { AccountState } from "./components/mobile/bottomNavBar/account/account.script";
+export type { DesktopLayoutProps } from "./pages/trading/trading.ui.desktop";
+
+export * from "./components/desktop/dataList";
+export * from "./components/base/lastTrades";
+export * from "./components/desktop/assetView";
+export * from "./components/base/orderBook";
+export * from "./components/desktop/riskRate";
+export * from "./components/desktop/orderBookAndTrades";
+export * from "./components/desktop/layout/splitLayout/splitLayout";
+export * from "./components/mobile/bottomNavBar";
+export * from "./components/mobile/portfolioSheet";
+export * from "./components/mobile/fundingRate";
+export * from "./components/mobile/fundingRateModal";
+export * from "./pages/trading";
 export { useFirstTimeDeposit } from "./pages/trading/hooks/useFirstTimeDeposit";
+export * from "./provider/tradingPageContext";
+export * from "./provider/tradingPageProvider";
+export * from "./hooks";

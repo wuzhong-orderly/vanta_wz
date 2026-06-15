@@ -67,7 +67,7 @@ export const DesktopOrderBookCell: FC<DesktopOrderBookCellProps> = (props) => {
 
   return (
     <div
-      className="oui-relative oui-flex oui-cursor-pointer oui-flex-row oui-justify-between oui-pl-3 oui-text-xs oui-tabular-nums oui-text-base-contrast-80"
+      className="oui-relative oui-flex oui-cursor-pointer oui-flex-row oui-justify-between oui-ps-3 oui-text-xs oui-tabular-nums oui-text-base-contrast-80"
       style={{ height: `${cellHeight}px` }}
       onClick={() => {
         if (Number.isNaN(price) || Number.isNaN(quantity)) {
@@ -80,22 +80,26 @@ export const DesktopOrderBookCell: FC<DesktopOrderBookCellProps> = (props) => {
     >
       <div
         className={cn(
-          "oui-mr-2 oui-flex oui-basis-7/12 oui-flex-row oui-items-center",
+          "oui-me-2 oui-flex oui-basis-7/12 oui-flex-row oui-items-center",
           showTotal && "oui-basis-5/12",
         )}
       >
         <div
           className={cn(
-            "oui-flex-1 oui-text-left",
+            "oui-flex-1 oui-text-start",
             props.type === OrderBookCellType.ASK
               ? "oui-text-trade-loss"
               : "oui-text-trade-profit",
           )}
         >
-          <Text.numeral dp={dp}>{price}</Text.numeral>
+          <Text.numeral dp={dp} dir="ltr">
+            {price}
+          </Text.numeral>
         </div>
-        <div className="oui-flex-1 oui-text-right oui-text-base-contrast-80">
-          <Text.numeral dp={base_dp}>{quantity}</Text.numeral>
+        <div className="oui-flex-1 oui-text-end oui-text-base-contrast-80">
+          <Text.numeral dp={base_dp} dir="ltr">
+            {quantity}
+          </Text.numeral>
         </div>
       </div>
       <div
@@ -106,26 +110,26 @@ export const DesktopOrderBookCell: FC<DesktopOrderBookCellProps> = (props) => {
       >
         {showTotal ? (
           <>
-            <div className={cn("oui-flex-1 oui-pr-3 oui-text-right")}>
-              <Text.numeral dp={base_dp} className="oui-z-10">
+            <div className={cn("oui-flex-1 oui-pe-3 oui-text-end")}>
+              <Text.numeral dp={base_dp} className="oui-z-10" dir="ltr">
                 {accumulated}
               </Text.numeral>
             </div>
-            <div className={cn("oui-flex-1 oui-pr-3 oui-text-right")}>
-              <Text.numeral dp={0} className="oui-z-10">
+            <div className={cn("oui-flex-1 oui-pe-3 oui-text-end")}>
+              <Text.numeral dp={0} className="oui-z-10" dir="ltr">
                 {totalAmount}
               </Text.numeral>
             </div>
           </>
         ) : (
-          <div className={cn("oui-flex-1 oui-pr-3 oui-text-right")}>
+          <div className={cn("oui-flex-1 oui-pe-3 oui-text-end")}>
             {coinType === base && (
-              <Text.numeral dp={base_dp} className="oui-z-10">
+              <Text.numeral dp={base_dp} className="oui-z-10" dir="ltr">
                 {accumulated}
               </Text.numeral>
             )}
             {coinType === quote && (
-              <Text.numeral dp={0} className="oui-z-10">
+              <Text.numeral dp={0} className="oui-z-10" dir="ltr">
                 {totalAmount}
               </Text.numeral>
             )}
@@ -145,7 +149,7 @@ export const DesktopOrderBookCell: FC<DesktopOrderBookCellProps> = (props) => {
       {isPendingOrder && (
         <div
           className={cn(
-            "oui-pointer-events-none oui-absolute oui-left-[4px] oui-size-[4px] oui-rounded-full",
+            "oui-pointer-events-none oui-absolute oui-start-[4px] oui-size-[4px] oui-rounded-full",
             props.type === OrderBookCellType.ASK && "oui-bg-trade-loss",
             props.type === OrderBookCellType.BID && "oui-bg-trade-profit",
           )}

@@ -47,6 +47,8 @@ export interface OrderBookProps {
   cellHeight?: number;
 
   className?: string;
+  /** Same key as order book stream / funding APIs (e.g. may include broker suffix). */
+  symbol: string;
   symbolInfo: BasicSymbolInfo;
   showBuySellRatio?: boolean;
   setShowBuySellRatio?: (show: boolean) => void;
@@ -68,8 +70,6 @@ export const OrderBook: FC<OrderBookProps> = (props) => {
 
   const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const symbol = `PERP_${props.symbolInfo.base}_${props.symbolInfo.quote}`;
 
   const [coinUnit, setCoinUnit] = useLocalStorage<"qty" | "base" | "quote">(
     ORDERBOOK_MOBILE_COIN_TYPE_KEY,
@@ -99,7 +99,7 @@ export const OrderBook: FC<OrderBookProps> = (props) => {
         itemAlign={"start"}
       >
         <Flex justify="between" itemAlign="center" className="oui-w-full">
-          <FundingRateWidget symbol={symbol} />
+          <FundingRateWidget symbol={props.symbol} />
           <BuySellRatioSettings
             showBuySellRatio={showBuySellRatio}
             setShowBuySellRatio={setShowBuySellRatio}

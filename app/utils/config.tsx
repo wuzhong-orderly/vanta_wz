@@ -531,6 +531,8 @@ export const useOrderlyConfig = () => {
               position: {
                 top: 130,
               },
+              secondaryColor: "rgba(255,255,255,0.54)",
+              secondaryFontSize: 20,
             },
             informations: {
               position: {

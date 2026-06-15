@@ -22,6 +22,7 @@ export const OrderBook: React.FC<OrderBookState & { className?: string }> = (
           lastPrice={props.lastPrice!}
           depths={props.depths}
           activeDepth={props.selDepth}
+          symbol={props.symbol}
           base={props.base}
           quote={props.quote}
           isLoading={props.isLoading}

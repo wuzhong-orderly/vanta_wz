@@ -1,9 +1,21 @@
 import { FC, useMemo } from "react";
+import { injectable } from "@orderly.network/ui";
+import { BasicSymbolInfo } from "../../../types/types";
 import { OrderBookCellType } from "../../base/orderBook/types";
 import { DesktopListBox } from "./listBox.desktop";
 
+/**
+ * Desktop asks list props. `symbolInfo` and `depth` are threaded through
+ * {@link InjectableDesktopAsks} so Orderly plugins replacing `OrderBook.Desktop.Asks`
+ * can render without relying only on context. The default `DesktopAsks` uses `data`
+ * and reads symbol/depth from `OrderBookProvider` / `OrderBookContext`.
+ */
 export interface Props {
   data: number[][];
+  /** For plugin replacements; unused by the default asks row list (context carries symbol). */
+  symbolInfo: BasicSymbolInfo;
+  /** For plugin replacements; active depth key; unused by the default list (context carries depth). */
+  depth: string | undefined;
 }
 
 export const DesktopAsks: FC<Props> = (props) => {
@@ -29,3 +41,8 @@ export const DesktopAsks: FC<Props> = (props) => {
     />
   );
 };
+
+export const InjectableDesktopAsks = injectable<Props>(
+  DesktopAsks,
+  "OrderBook.Desktop.Asks",
+);

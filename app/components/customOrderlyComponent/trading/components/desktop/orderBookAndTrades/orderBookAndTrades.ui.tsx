@@ -42,7 +42,7 @@ const TwoColLayout: React.FC<OrderBookAndTradesState> = (props) => {
       >
         <Title
           title={t("trading.orderBook")}
-          className="oui-pl-3 oui-text-sm"
+          className="oui-ps-3 oui-text-sm"
         />
         <React.Suspense fallback={null}>
           <LazyOrderBookWidget
@@ -101,8 +101,8 @@ const TabLayout: React.FC<OrderBookAndTradesState> = (props) => {
           props.setTab(tab as any);
         }}
         classNames={{
-          tabsList: "oui-pl-3",
-          // tabsContent: props.tab === "lastTrades" ? 'oui-pl-3' : ''
+          tabsList: "oui-ps-3",
+          // tabsContent: props.tab === "lastTrades" ? 'oui-ps-3' : ''
         }}
         size="lg"
       >

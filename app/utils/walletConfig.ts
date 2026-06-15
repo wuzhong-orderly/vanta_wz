@@ -118,8 +118,8 @@ export const getEvmInitialConfig = () => {
         options: {
           wallets,
           appMetadata: {
-            name: getRuntimeConfig("VITE_ORDERLY_BROKER_NAME"),
-            description: getRuntimeConfig("VITE_ORDERLY_BROKER_NAME"),
+            name: getRuntimeConfig("VITE_ORDERLY_BROKER_NAME") || "Vanta",
+            description: getRuntimeConfig("VITE_ORDERLY_BROKER_NAME") || "Vanta",
           },
         },
       }

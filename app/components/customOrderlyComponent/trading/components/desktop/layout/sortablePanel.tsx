@@ -101,7 +101,7 @@ export const SortablePanel: FC<PropsWithChildren<SortablePanelProps>> = (
         props.className,
         // dragOverlay && "oui-scale-105",
       )}
-      ref={combinedRef}
+      ref={combinedRef as any}
       style={style}
     >
       <div
@@ -116,9 +116,9 @@ export const SortablePanel: FC<PropsWithChildren<SortablePanelProps>> = (
         <button
           {...attributes}
           {...listeners}
-          className="oui-absolute oui-right-0 oui-top-4 oui-cursor-move oui-py-1"
+          className="oui-absolute oui-end-0 oui-top-4 oui-cursor-move oui-py-1"
           style={{ touchAction: "none" }}
-          ref={setActivatorNodeRef}
+          ref={setActivatorNodeRef as any}
         >
           <IndicatorIcon
             className={cn(

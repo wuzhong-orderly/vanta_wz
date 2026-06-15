@@ -48,7 +48,7 @@ const RwaOutsideMarketHoursNotify = () => {
       </Flex>
 
       <button
-        className="oui-w-6 oui-h-6 oui-right-0 oui-top-0 oui-absolute oui-bg-base-8 oui-rounded-tr-[10px] oui-rounded-bl-[10px] oui-inline-flex oui-justify-center oui-items-center oui-gap-2.5 oui-cursor-pointer"
+        className="oui-w-6 oui-h-6 oui-end-0 oui-top-0 oui-absolute oui-bg-base-8 oui-rounded-tr-[10px] oui-rounded-bl-[10px] oui-inline-flex oui-justify-center oui-items-center oui-gap-2.5 oui-cursor-pointer"
         onClick={closeNotify}
       >
         <CloseIcon opacity={1} className="oui-text-base-contrast" size={16} />

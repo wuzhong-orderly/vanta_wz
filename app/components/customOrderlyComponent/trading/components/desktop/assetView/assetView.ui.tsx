@@ -1,5 +1,5 @@
 import { FC, useMemo, useState, useCallback, ReactNode } from "react";
-import { useAccount, useAccountInstance, useLocalStorage } from "@orderly.network/hooks";
+import { useAccount, useLocalStorage } from "@orderly.network/hooks";
 import { useTranslation } from "@orderly.network/i18n";
 import { useAppContext } from "@orderly.network/react-app";
 import { AccountStatusEnum } from "@orderly.network/types";
@@ -228,7 +228,7 @@ const AssetDetail: FC<AssetDetailProps> = (props) => {
         visible={visible}
         size="2xs"
         unit={unit}
-        unitClassName="oui-text-base-contrast-36 oui-ml-0.5"
+        unitClassName="oui-text-base-contrast-36 oui-ms-0.5"
         as="div"
         rule={rule}
         padding={false}
@@ -330,8 +330,8 @@ const AssetValueList: FC<AssetValueListProps> = (props) => {
           "group-hover:oui-will-change-[max-height]",
           open
             ? showLTV
-              ? "oui-max-h-[169px]"
-              : "oui-max-h-[144px]"
+              ? "oui-max-h-[144px]"
+              : "oui-max-h-[119px]"
             : "oui-max-h-0",
         )}
       >
@@ -407,253 +407,244 @@ export const AssetView: FC<
   isMainAccount,
   hasSubAccount,
   currentLtv,
-  riskRate,
 }) => {
-    const { title, description, titleColor, titleClsName } =
-      useCurrentStatusText();
+  const { title, description, titleColor, titleClsName } =
+    useCurrentStatusText();
 
-    const { t } = useTranslation();
+  const { t } = useTranslation();
+  const { account, switchAccount } = useAccount();
+  const currentState = account.stateValue;
+  const currentAccountId = currentState.accountId;
+  const isMain = currentAccountId === currentState.mainAccountId;
+  const accountName = isMain
+    ? t("subAccount.modal.mainAccount.title", "Main account")
+    : currentState.subAccounts?.find((sub) => sub.id === currentAccountId)?.description ||
+      currentAccountId ||
+      "";
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    const { account: accountInstance, switchAccount } = useAccount();
-    const currentState = accountInstance.stateValue;
-    const currentAccountId = currentState.accountId;
-    const isMain = currentAccountId === currentState.mainAccountId;
-    const accountName = isMain
-      ? "Main account"
-      : currentState.subAccounts?.find((sub) => sub.id === currentAccountId)?.description || currentAccountId || "";
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+  const transferButton = hasSubAccount && (
+    <Button
+      className="oui-assetView-transfer-btn"
+      fullWidth
+      color="secondary"
+      size="md"
+      onClick={onTransfer}
+      data-testid="oui-testid-assetView-transfer-button"
+    >
+      <Text>{t("common.transfer")}</Text>
+    </Button>
+  );
 
-    const transferButton = hasSubAccount && (
-      <Button
-        className="oui-assetView-transfer-btn"
-        fullWidth
-        color="secondary"
-        size="md"
-        onClick={onTransfer}
-        data-testid="oui-testid-assetView-transfer-button"
-      >
-        <Text>{t("common.transfer")}</Text>
-      </Button>
-    );
+  const depositButton = isMainAccount && (
+    <Button
+      className="oui-assetView-deposit-btn"
+      data-testid="oui-testid-assetView-deposit-button"
+      fullWidth
+      size="md"
+      onClick={onDeposit}
+    >
+      {!hasSubAccount && (
+        <ArrowDownShortIcon opacity={1} className="oui-text-primary-contrast" />
+      )}
+      <Text>{t("common.deposit")}</Text>
+    </Button>
+  );
 
-    const depositButton = isMainAccount && (
-      <Button
-        className="oui-assetView-deposit-btn"
-        data-testid="oui-testid-assetView-deposit-button"
-        fullWidth
-        size="md"
-        onClick={onDeposit}
-      >
-        {!hasSubAccount && (
-          <ArrowDownShortIcon opacity={1} className="oui-text-primary-contrast" />
-        )}
-        <Text>{t("common.deposit")}</Text>
-      </Button>
-    );
-
-    const withdrawButton = isMainAccount && (
-      <Button
-        className="oui-assetView-withdraw-btn"
-        fullWidth
-        color="secondary"
-        size="md"
-        onClick={onWithdraw}
-        data-testid="oui-testid-assetView-withdraw-button"
-      >
-        {!hasSubAccount && (
-          <ArrowDownShortIcon
-            color="white"
-            opacity={1}
-            className="oui-rotate-180"
-          />
-        )}
-        <Text>{t("common.withdraw")}</Text>
-      </Button>
-    );
-
-    return (
-      <Box className="oui-assetView oui-relative">
-        {isConnected && accountName && (
-          <PopoverRoot open={dropdownOpen} onOpenChange={setDropdownOpen}>
-            <PopoverTrigger asChild>
-              <Flex
-                gap={1}
-                itemAlign="center"
-                className="oui-cursor-pointer oui-mb-2"
-              >
-                <Text size="2xs" weight="semibold" color="neutral">
-                  {accountName}
-                </Text>
-                <ChevronDownIcon size={12} className="oui-text-base-contrast-54" />
-              </Flex>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              side="bottom"
-              sideOffset={8}
-              className="oui-w-[240px] oui-border oui-border-line-6 oui-bg-base-8 oui-p-3 oui-rounded-lg oui-space-y-1"
-            >
-              {currentState.mainAccountId && (
-                <Flex
-                  justify="between"
-                  itemAlign="center"
-                  className={cn(
-                    "oui-px-2 oui-py-1.5 oui-rounded-md oui-cursor-pointer hover:oui-bg-base-6",
-                    isMain && "oui-bg-base-6"
-                  )}
-                  onClick={() => {
-                    if (!isMain) {
-                      switchAccount(currentState.mainAccountId!).then(() => {
-                        setDropdownOpen(false);
-                      });
-                    } else {
-                      setDropdownOpen(false);
-                    }
-                  }}
-                >
-                  <Text size="2xs" weight="semibold">
-                    {t("subAccount.modal.mainAccount.title", "Main account")}
-                  </Text>
-                  {isMain && (
-                    <Text size="2xs" color="primary">
-                      {t("common.current", "Current")}
-                    </Text>
-                  )}
-                </Flex>
-              )}
-              {currentState.subAccounts?.map((sub) => (
-                <Flex
-                  key={sub.id}
-                  justify="between"
-                  itemAlign="center"
-                  className={cn(
-                    "oui-px-2 oui-py-1.5 oui-rounded-md oui-cursor-pointer hover:oui-bg-base-6",
-                    sub.id === currentAccountId && "oui-bg-base-6"
-                  )}
-                  onClick={() => {
-                    if (sub.id !== currentAccountId) {
-                      switchAccount(sub.id).then(() => {
-                        setDropdownOpen(false);
-                      });
-                    } else {
-                      setDropdownOpen(false);
-                    }
-                  }}
-                >
-                  <Text size="2xs" weight="semibold">
-                    {sub.description || sub.id}
-                  </Text>
-                  {sub.id === currentAccountId && (
-                    <Text size="2xs" color="primary">
-                      {t("common.current", "Current")}
-                    </Text>
-                  )}
-                </Flex>
-              ))}
-            </PopoverContent>
-          </PopoverRoot>
-        )}
-        {title && description && (
-          <Flex direction="column" gap={1} className="oui-mb-[32px]">
-            <Text
-              size="lg"
-              weight="bold"
-              color={titleColor || "inherit"}
-              className={titleClsName}
-            >
-              {title}
-            </Text>
-            <Text
-              size="2xs"
-              color="neutral"
-              weight="semibold"
-              className="oui-text-center"
-            >
-              {description}
-            </Text>
-          </Flex>
-        )}
-        <AuthGuard
-          networkId={networkId}
-          buttonProps={{ size: "md", fullWidth: true }}
-        >
-          {isFirstTimeDeposit && isMainAccount ? (
-            <>
-              <Box>
-                <Flex direction="column" gap={1} className="oui-mb-[32px]">
-                  <Text.gradient size="lg" weight="bold" color="brand">
-                    {t("trading.asset.startTrading")}
-                  </Text.gradient>
-                  <Text size="2xs" color="neutral" weight="semibold">
-                    {t("trading.asset.startTrading.description")}
-                  </Text>
-                </Flex>
-              </Box>
-              <Button
-                className="oui-assetView-deposit-btn"
-                data-testid="oui-testid-assetView-deposit-button"
-                fullWidth
-                size="md"
-                onClick={onDeposit}
-              >
-                <ArrowDownShortIcon
-                  opacity={1}
-                  className="oui-text-primary-contrast"
-                />
-                <Text>{t("common.deposit")}</Text>
-              </Button>
-
-              <Box className="oui-mt-3">
-                <FaucetWidget />
-              </Box>
-            </>
-          ) : (
-            <Box className="oui-space-y-4">
-              <TotalValue
-                totalValue={totalValue}
-                visible={visible}
-                onToggleVisibility={toggleVisible}
-              />
-
-              <RiskRateWidget />
-              <AssetValueList
-                visible={visible}
-                freeCollateral={freeCollateral}
-                marginRatioVal={marginRatioVal}
-                renderMMR={renderMMR}
-                maintenanceMargin={maintenanceMargin}
-                currentLeverage={currentLeverage}
-                isConnected={isConnected}
-                currentLtv={currentLtv}
-              />
-              <Flex
-                gap={isMainAccount ? (hasSubAccount ? 2 : 3) : 0}
-                itemAlign="center"
-              >
-                {isMainAccount ? (
-                  <>
-                    {depositButton}
-                    {transferButton}
-                    {withdrawButton}
-                  </>
-                ) : (
-                  transferButton
-                )}
-              </Flex>
-              {isMainAccount && <FaucetWidget />}
-            </Box>
-          )}
-        </AuthGuard>
-        <div
-          className={cn(
-            "oui-absolute oui-inset-0 oui-rotate-180",
-            "oui-pointer-events-none oui-rounded-2xl oui-blur-[200px]",
-          )}
-          style={{
-            background:
-              "conic-gradient(from -40.91deg at 40.63% 50.41%, rgba(var(--oui-color-base-foreground)/0) -48.92deg, rgba(var(--oui-color-base-foreground)/0) 125.18deg, rgb(var(--oui-color-primary)) 193.41deg, rgb(var(--oui-color-warning)) 216.02deg, rgb(var(--oui-color-link)) 236.07deg, rgb(var(--oui-color-primary-light)) 259.95deg, rgba(var(--oui-color-base-foreground)/0) 311.08deg, rgba(var(--oui-color-base-foreground)/0) 485.18deg)",
-          }}
+  const withdrawButton = isMainAccount && (
+    <Button
+      className="oui-assetView-withdraw-btn"
+      fullWidth
+      color="secondary"
+      size="md"
+      onClick={onWithdraw}
+      data-testid="oui-testid-assetView-withdraw-button"
+    >
+      {!hasSubAccount && (
+        <ArrowDownShortIcon
+          color="white"
+          opacity={1}
+          className="oui-rotate-180"
         />
-      </Box>
-    );
-  };
+      )}
+      <Text>{t("common.withdraw")}</Text>
+    </Button>
+  );
+
+  return (
+    <Box className="oui-assetView oui-relative">
+      {isConnected && accountName ? (
+        <PopoverRoot open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <PopoverTrigger asChild>
+            <Flex gap={1} itemAlign="center" className="oui-mb-2 oui-cursor-pointer">
+              <Text size="2xs" weight="semibold" color="neutral">
+                {accountName}
+              </Text>
+              <ChevronDownIcon size={12} className="oui-text-base-contrast-54" />
+            </Flex>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            className="oui-w-[240px] oui-space-y-1 oui-rounded-lg oui-border oui-border-line-6 oui-bg-base-8 oui-p-3"
+          >
+            {currentState.mainAccountId ? (
+              <Flex
+                justify="between"
+                itemAlign="center"
+                className={cn(
+                  "oui-cursor-pointer oui-rounded-md oui-px-2 oui-py-1.5 hover:oui-bg-base-6",
+                  isMain && "oui-bg-base-6",
+                )}
+                onClick={() => {
+                  if (!isMain) {
+                    switchAccount(currentState.mainAccountId!).then(() => setDropdownOpen(false));
+                    return;
+                  }
+                  setDropdownOpen(false);
+                }}
+              >
+                <Text size="2xs" weight="semibold">
+                  {t("subAccount.modal.mainAccount.title", "Main account")}
+                </Text>
+                {isMain ? (
+                  <Text size="2xs" color="primary">
+                    {t("common.current", "Current")}
+                  </Text>
+                ) : null}
+              </Flex>
+            ) : null}
+            {currentState.subAccounts?.map((sub) => (
+              <Flex
+                key={sub.id}
+                justify="between"
+                itemAlign="center"
+                className={cn(
+                  "oui-cursor-pointer oui-rounded-md oui-px-2 oui-py-1.5 hover:oui-bg-base-6",
+                  sub.id === currentAccountId && "oui-bg-base-6",
+                )}
+                onClick={() => {
+                  if (sub.id !== currentAccountId) {
+                    switchAccount(sub.id).then(() => setDropdownOpen(false));
+                    return;
+                  }
+                  setDropdownOpen(false);
+                }}
+              >
+                <Text size="2xs" weight="semibold">
+                  {sub.description || sub.id}
+                </Text>
+                {sub.id === currentAccountId ? (
+                  <Text size="2xs" color="primary">
+                    {t("common.current", "Current")}
+                  </Text>
+                ) : null}
+              </Flex>
+            ))}
+          </PopoverContent>
+        </PopoverRoot>
+      ) : null}
+      {title && description && (
+        <Flex direction="column" gap={1} className="oui-mb-[32px]">
+          <Text
+            size="lg"
+            weight="bold"
+            color={titleColor || "inherit"}
+            className={titleClsName}
+          >
+            {title}
+          </Text>
+          <Text
+            size="2xs"
+            color="neutral"
+            weight="semibold"
+            className="oui-text-center"
+          >
+            {description}
+          </Text>
+        </Flex>
+      )}
+      <AuthGuard
+        networkId={networkId}
+        buttonProps={{ size: "md", fullWidth: true }}
+      >
+        {isFirstTimeDeposit && isMainAccount ? (
+          <>
+            <Box>
+              <Flex direction="column" gap={1} className="oui-mb-[32px]">
+                <Text.gradient size="lg" weight="bold" color="brand">
+                  {t("trading.asset.startTrading")}
+                </Text.gradient>
+                <Text size="2xs" color="neutral" weight="semibold">
+                  {t("trading.asset.startTrading.description")}
+                </Text>
+              </Flex>
+            </Box>
+            <Button
+              className="oui-assetView-deposit-btn"
+              data-testid="oui-testid-assetView-deposit-button"
+              fullWidth
+              size="md"
+              onClick={onDeposit}
+            >
+              <ArrowDownShortIcon
+                opacity={1}
+                className="oui-text-primary-contrast"
+              />
+              <Text>{t("common.deposit")}</Text>
+            </Button>
+
+            <Box className="oui-mt-3">
+              <FaucetWidget />
+            </Box>
+          </>
+        ) : (
+          <Box className="oui-space-y-4">
+            <TotalValue
+              totalValue={totalValue}
+              visible={visible}
+              onToggleVisibility={toggleVisible}
+            />
+            <RiskRateWidget />
+            <AssetValueList
+              visible={visible}
+              freeCollateral={freeCollateral}
+              marginRatioVal={marginRatioVal}
+              renderMMR={renderMMR}
+              maintenanceMargin={maintenanceMargin}
+              currentLeverage={currentLeverage}
+              isConnected={isConnected}
+              currentLtv={currentLtv}
+            />
+            <Flex
+              gap={isMainAccount ? (hasSubAccount ? 2 : 3) : 0}
+              itemAlign="center"
+            >
+              {isMainAccount ? (
+                <>
+                  {depositButton}
+                  {transferButton}
+                  {withdrawButton}
+                </>
+              ) : (
+                transferButton
+              )}
+            </Flex>
+            {isMainAccount && <FaucetWidget />}
+          </Box>
+        )}
+      </AuthGuard>
+      <div
+        className={cn(
+          "oui-absolute oui-inset-0 oui-rotate-180",
+          "oui-pointer-events-none oui-rounded-2xl oui-blur-[200px]",
+        )}
+        style={{
+          background:
+            "conic-gradient(from -40.91deg at 40.63% 50.41%, rgba(var(--oui-color-base-foreground)/0) -48.92deg, rgba(var(--oui-color-base-foreground)/0) 125.18deg, rgb(var(--oui-color-primary)) 193.41deg, rgb(var(--oui-color-warning)) 216.02deg, rgb(var(--oui-color-link)) 236.07deg, rgb(var(--oui-color-primary-light)) 259.95deg, rgba(var(--oui-color-base-foreground)/0) 311.08deg, rgba(var(--oui-color-base-foreground)/0) 485.18deg)",
+        }}
+      />
+    </Box>
+  );
+};

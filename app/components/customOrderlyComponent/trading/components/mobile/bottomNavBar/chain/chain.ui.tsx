@@ -1,8 +1,8 @@
 import { FC } from "react";
-import { Box, ChainIcon, modal, toast } from "@orderly.network/ui";
-import { ChainState } from "./chain.script";
-import { ChainSelectorSheetId } from "@orderly.network/ui-chain-selector";
 import { useTranslation } from "@orderly.network/i18n";
+import { Box, ChainIcon, modal, toast } from "@orderly.network/ui";
+import { ChainSelectorSheetId } from "@orderly.network/ui-chain-selector";
+import { ChainState } from "./chain.script";
 
 export const Chain: FC<ChainState> = (props) => {
   const { t } = useTranslation();
@@ -25,13 +25,13 @@ export const Chain: FC<ChainState> = (props) => {
               }
               toast.success(t("connector.networkSwitched"));
             },
-            (error) => console.log("[switchChain error]", error)
+            (error) => console.log("[switchChain error]", error),
           );
       }}
     >
       <Box className="oui-relative oui-rounded-t-[6px] oui-rounded-bl-[6px] oui-rounded-br-[3px] oui-bg-base-5 oui-px-2 oui-h-7 oui-flex oui-items-center">
         <ChainIcon chainId={props.currentChainId!} size="2xs" />
-        <div className="oui-absolute oui-right-0 oui-bottom-0">
+        <div className="oui-absolute oui-end-0 oui-bottom-0">
           <svg
             width="9"
             height="9"

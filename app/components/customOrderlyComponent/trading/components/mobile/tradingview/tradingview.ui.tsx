@@ -25,13 +25,13 @@ export const TradingviewUI: React.FC<TradingviewState> = (props) => {
         <div
           ref={props.dragRef}
           className={cn(
-            "oui-h-[1px] oui-absolute oui-left-0 oui-right-0 oui-bottom-0 oui-top-0 oui-z-10 oui-mt-[7px] oui-bg-base-contrast-12",
+            "oui-h-[1px] oui-absolute oui-start-0 oui-end-0 oui-bottom-0 oui-top-0 oui-z-10 oui-mt-[7px] oui-bg-base-contrast-12",
             props.dragging && "oui-bg-primary ",
           )}
         >
           <KlineDragIcon
             className={cn(
-              "oui-w-3 oui-h-3 oui-absolute oui-left-1/2 -oui-top-[5px] -oui-translate-y-[0.5px] oui-text-base-contrast-12",
+              "oui-w-3 oui-h-3 oui-absolute oui-start-1/2 -oui-top-[5px] -oui-translate-y-[0.5px] oui-text-base-contrast-12",
               props.dragging && " oui-text-primary",
             )}
           />

@@ -9,8 +9,8 @@ import {
   ORDERBOOK_COIN_TYPE_KEY,
   OrderBookProvider,
 } from "../../base/orderBook/orderContext";
-import { DesktopAsks } from "./asks.desktop";
-import { DesktopBids } from "./bids.desktop";
+import { InjectableDesktopAsks } from "./asks.desktop";
+import { InjectableDesktopBids } from "./bids.desktop";
 import { BuySellRatioSettings } from "./buySellRatio";
 import { DesktopDepthSelect } from "./depthSelect.desktop";
 import { DesktopHeader } from "./header.desktop";
@@ -108,7 +108,7 @@ export const DesktopOrderBook: FC<DesktopOrderBookProps> = (props) => {
         cols={1}
         rows={showBuySellRatio ? 6 : 5}
         id="oui-orderbook-desktop"
-        ref={divRef}
+        ref={divRef as any}
         className={cn(
           "oui-orderBook",
           "oui-relative oui-size-full",
@@ -117,7 +117,7 @@ export const DesktopOrderBook: FC<DesktopOrderBookProps> = (props) => {
             : "oui-grid-rows-[auto,auto,1fr,auto,1fr]",
         )}
       >
-        <Flex justify="between" itemAlign="center" className="oui-pr-3">
+        <Flex justify="between" itemAlign="center" className="oui-pe-3">
           <DesktopDepthSelect
             depths={props.depths}
             value={props.activeDepth}
@@ -129,7 +129,11 @@ export const DesktopOrderBook: FC<DesktopOrderBookProps> = (props) => {
           />
         </Flex>
         <DesktopHeader quote={quote} base={base} />
-        <DesktopAsks data={[...props.asks]} />
+        <InjectableDesktopAsks
+          data={[...props.asks]}
+          symbolInfo={props.symbolInfo}
+          depth={props.activeDepth}
+        />
         <DesktopMarkPrice
           lastPrice={lastPrice}
           markPrice={markPrice}
@@ -142,7 +146,11 @@ export const DesktopOrderBook: FC<DesktopOrderBookProps> = (props) => {
           bids={[...props.bids]}
           symbolInfo={props.symbolInfo}
         />
-        <DesktopBids data={[...props.bids]} />
+        <InjectableDesktopBids
+          data={[...props.bids]}
+          symbolInfo={props.symbolInfo}
+          depth={props.activeDepth}
+        />
         {showBuySellRatio && (
           <BuySellRatioBar
             ratio={buySellRatio || null}

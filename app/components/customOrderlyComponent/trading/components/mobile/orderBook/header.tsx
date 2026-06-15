@@ -8,8 +8,13 @@ import {
   Picker,
   Text,
 } from "@orderly.network/ui";
-import { SelectOption } from "@orderly.network/ui/src/select/withOptions";
 import { ORDERBOOK_MOBILE_COIN_TYPE_KEY } from "../../base/orderBook/orderContext";
+
+type SelectOption = {
+  value: "qty" | "base" | "quote";
+  label: string;
+  data: string[];
+};
 
 interface Props {
   quote: string;

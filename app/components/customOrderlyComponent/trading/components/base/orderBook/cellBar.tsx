@@ -1,5 +1,5 @@
-import { cn } from "@orderly.network/ui";
 import { FC, useMemo } from "react";
+import { cn } from "@orderly.network/ui";
 
 export enum CellBarDirection {
   LEFT_TO_RIGHT,
@@ -9,7 +9,7 @@ export enum CellBarDirection {
 interface CellBarProps {
   width: number;
   className?: string;
-  direction?: CellBarDirection
+  direction?: CellBarDirection;
 }
 
 export const CellBar: FC<CellBarProps> = (props) => {
@@ -20,15 +20,14 @@ export const CellBar: FC<CellBarProps> = (props) => {
       return { transform: `translateX(${x}%)` };
     }
     return { transform: `translateX(-${x}%)` };
-    
   }, [props.width]);
 
   return (
     <div
       className={cn(
-        "oui-absolute oui-right-[-100%] oui-top-0 oui-h-full oui-w-full oui-transition-transform oui-pointer-events-none",
-        direction === CellBarDirection.LEFT_TO_RIGHT && "oui-left-[-100%]",
-        props.className
+        "oui-absolute oui-end-[-100%] oui-top-0 oui-h-full oui-w-full oui-transition-transform oui-pointer-events-none",
+        direction === CellBarDirection.LEFT_TO_RIGHT && "oui-start-[-100%]",
+        props.className,
       )}
       style={transform}
     />

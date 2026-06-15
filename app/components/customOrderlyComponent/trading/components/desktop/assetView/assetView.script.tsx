@@ -10,7 +10,6 @@ import {
   usePositionStream,
   useComputedLTV,
 } from "@orderly.network/hooks";
-import { Decimal } from "@orderly.network/utils";
 import { useTranslation } from "@orderly.network/i18n";
 import { useDataTap } from "@orderly.network/react-app";
 import { AccountStatusEnum, NetworkId } from "@orderly.network/types";
@@ -114,17 +113,6 @@ export const useAssetViewScript = () => {
     });
   }, [visible]);
 
-  const riskRate = useMemo(() => {
-    if (!isConnected || marginRatio === null || mmr === null) {
-      return "--";
-    }
-    const calculatedRiskRate = new Decimal(mmr)
-      .div(marginRatio)
-      .mul(100)
-      .todp(2, Decimal.ROUND_UP);
-    return `${calculatedRiskRate.toString().replace(/\.?0+$/, "")}%`;
-  }, [isConnected, marginRatio, mmr]);
-
   const currentLtv = useComputedLTV();
   const _freeCollateral = useDataTap(freeCollateral) ?? undefined;
   const _marginRatioVal = useDataTap(marginRatioVal) ?? undefined;
@@ -152,7 +140,6 @@ export const useAssetViewScript = () => {
     isMainAccount,
     hasSubAccount: !!state.subAccounts?.length,
     currentLtv,
-    riskRate,
   };
 };
 

@@ -21,9 +21,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS, Transform } from "@dnd-kit/utilities";
 import {
+  useBadgeBySymbol,
   useGetRwaSymbolOpenStatus,
   useLocalStorage,
 } from "@orderly.network/hooks";
+import { useTranslation } from "@orderly.network/i18n";
 import {
   SideMarketsWidget,
   SymbolInfoBarFullWidget,
@@ -33,10 +35,19 @@ import {
   OrderEntrySortKeys,
   TradingviewFullscreenKey,
 } from "@orderly.network/types";
-import { Box, cn, Flex } from "@orderly.network/ui";
+import {
+  Box,
+  Button,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  cn,
+  Flex,
+  Text,
+} from "@orderly.network/ui";
 import { OrderEntryWidget } from "@orderly.network/ui-order-entry";
 import { TradingviewWidget } from "@orderly.network/ui-tradingview";
 import { DepositStatusWidget } from "@orderly.network/ui-transfer";
+import { CollapseIcon, ExpandIcon } from "../../components/base/icons";
 import { SortablePanel } from "../../components/desktop/layout/sortablePanel";
 import { SplitLayout } from "../../components/desktop/layout/splitLayout";
 import { showRwaOutsideMarketHoursNotify } from "../../components/desktop/notify/rwaNotification";
@@ -115,6 +126,20 @@ const scaleModifier: Modifier = ({
   return transform;
 };
 
+function getClampedPanelWidth(
+  size: string | null | undefined,
+  minWidth: number,
+  maxWidth: number,
+) {
+  const width = Number.parseFloat(size ?? "");
+
+  if (!Number.isFinite(width)) {
+    return minWidth;
+  }
+
+  return Math.min(Math.max(width, minWidth), maxWidth);
+}
+
 export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
   const {
     resizeable,
@@ -147,9 +172,20 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
   } = props;
 
   const { showCountdown, closeCountdown } = useShowRwaCountdown(props.symbol);
+  const { brokerName } = useBadgeBySymbol(props.symbol);
+  const { t } = useTranslation();
+
   const symbolInfoBarHeight = useMemo(() => {
-    return showCountdown ? 104 : 56;
-  }, [showCountdown]);
+    let height = 56;
+    if (brokerName) {
+      height += 46;
+      height += 8;
+    }
+    if (showCountdown) {
+      height += 48;
+    }
+    return height;
+  }, [showCountdown, brokerName]);
 
   const { isRwa, open } = useGetRwaSymbolOpenStatus(props.symbol);
 
@@ -169,9 +205,8 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
     ["assets", "orderEntry"],
   );
 
-  // Filter out stale 'margin' key from old localStorage values
   const filteredSortableItems = useMemo(
-    () => sortableItems.filter((key) => key !== "margin"),
+    () => sortableItems.filter((key: string) => key !== "margin"),
     [sortableItems],
   );
 
@@ -204,7 +239,13 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
           },
         ];
       },
-      sideEffects: ({ active, dragOverlay }) => {
+      sideEffects: ({
+        active,
+        dragOverlay,
+      }: {
+        active: { node: HTMLElement };
+        dragOverlay: { node: HTMLElement };
+      }) => {
         // console.log(active.node);
         active.node.style.opacity = "0";
         const innerElement = dragOverlay.node.querySelector(".inner-content");
@@ -277,9 +318,9 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
     return tradingViewFullScreen
       ? 0
       : symbolInfoBarHeight +
-      orderbookMaxHeight +
-      dataListInitialHeight +
-      space * 4;
+          orderbookMaxHeight +
+          dataListInitialHeight +
+          space * 4;
   }, [tradingViewFullScreen]);
 
   const minScreenHeightSM =
@@ -324,12 +365,50 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
 
   const marketsWidget = (
     <SideMarketsWidget
-      resizeable={resizeable}
-      panelSize={panelSize}
-      onPanelSizeChange={onPanelSizeChange as any}
       symbol={props.symbol}
       onSymbolChange={props.onSymbolChange}
+      panelSize={panelSize}
     />
+  );
+
+  const toggleButtoncls = cn(
+    "oui-text-base-contrast-36",
+    resizeable
+      ? "oui-cursor-pointer hover:oui-text-base-contrast-80"
+      : "oui-cursor-not-allowed",
+  );
+
+  const marketsHeader = (
+    <Flex
+      className={
+        panelSize === "small"
+          ? "oui-absolute oui-end-[-20px] oui-z-50"
+          : "oui-relative"
+      }
+      justify={panelSize === "large" ? "between" : "center"}
+      width="100%"
+      px={3}
+    >
+      {panelSize === "large" && (
+        <Text size="base" intensity={80}>
+          {t("common.markets")}
+        </Text>
+      )}
+      {panelSize === "large" && (
+        <div
+          onClick={resizeable ? () => onPanelSizeChange?.("middle") : undefined}
+        >
+          <CollapseIcon className={toggleButtoncls} />
+        </div>
+      )}
+      {(panelSize === "middle" || panelSize === "small") && (
+        <div
+          onClick={resizeable ? () => onPanelSizeChange?.("large") : undefined}
+        >
+          <ExpandIcon className={toggleButtoncls} />
+        </div>
+      )}
+    </Flex>
   );
 
   const marketsView = (
@@ -340,19 +419,35 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       height="100%"
       width={marketsWidth}
       style={{ minWidth: marketsWidth }}
-      className="oui-trading-markets-container oui-transition-all oui-duration-150"
+      className="oui-trading-markets-container oui-min-h-0 oui-min-w-0 oui-max-w-full oui-transition-all oui-duration-150"
       onTransitionEnd={() => setAnimating(false)}
     >
-      {!animating && marketLayout === "left" && marketsWidget}
+      <Flex
+        id="oui-side-markets"
+        className="oui-relative oui-min-h-0 oui-min-w-0 oui-font-semibold"
+        direction="column"
+        gapY={5}
+        height="100%"
+        width="100%"
+      >
+        {marketsHeader}
+
+        {/* List: flex-1 min-h-0 under header+gap; overflow-hidden + rounded-b-2xl clips table to card bottom (outer Box r="2xl"). */}
+        {!animating && marketLayout === "left" && (
+          <Box
+            width="100%"
+            className="oui-min-h-0 oui-min-w-0 oui-max-w-full oui-flex-1 oui-overflow-hidden oui-rounded-b-2xl"
+          >
+            {marketsWidget}
+          </Box>
+        )}
+      </Flex>
     </Box>
   );
 
   const symbolInfoBarView = (
     <Box
       className="oui-trading-symbolInfoBar-container"
-      intensity={900}
-      r="2xl"
-      px={3}
       width="100%"
       style={{
         minHeight: symbolInfoBarHeight,
@@ -385,12 +480,12 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       classNames={{
         root: cn(
           tradingViewFullScreen
-            ? "!oui-absolute oui-top-0 oui-left-0 oui-right-0 oui-bottom-0 oui-z-[40] oui-bg-base-10"
+            ? "!oui-absolute oui-inset-0 oui-z-40 oui-bg-base-10"
             : "oui-z-1",
         ),
         content: cn(
           tradingViewFullScreen
-            ? "oui-top-3 oui-bottom-3 oui-left-3 oui-right-3 oui-bg-base-9 oui-rounded-[16px] oui-overflow-hidden"
+            ? "oui-inset-3 oui-overflow-hidden oui-rounded-[16px] oui-bg-base-9"
             : "",
         ),
       }}
@@ -542,7 +637,8 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       return (
         <Flex
           gap={2}
-          className="oui-flex-1 oui-overflow-hidden"
+          itemAlign="stretch"
+          className="oui-min-h-0 oui-flex-1 oui-overflow-hidden"
           style={{ minWidth: marketsWidth + tradingViewMinWidth + space }}
         >
           {marketLayout === "left" && marketsView}
@@ -573,7 +669,13 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
   const renderTradingViewAndOrderbookView = () => {
     if (max4XL && layout === "left") {
       return (
-        <Flex gapX={2} style={{ minHeight: orderbookMinHeight }} height="100%">
+        <Flex
+          gapX={2}
+          itemAlign="stretch"
+          className="oui-min-h-0"
+          style={{ minHeight: orderbookMinHeight }}
+          height="100%"
+        >
           {tradingViewAndOrderbookView}
           {marketLayout === "left" && marketsView}
         </Flex>
@@ -582,15 +684,41 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
     return tradingViewAndOrderbookView;
   };
 
+  const orderEntryPanelWidth =
+    max4XL && horizontalDraggable
+      ? getClampedPanelWidth(
+          mainSplitSize,
+          orderEntryMinWidth,
+          orderEntryMaxWidth,
+        )
+      : orderEntryMinWidth;
+
+  const orderBookPanelWidth =
+    max4XL && horizontalDraggable
+      ? getClampedPanelWidth(
+          orderBookSplitSize,
+          orderbookMinWidth,
+          orderbookMaxWidth,
+        )
+      : orderbookMinWidth;
+
+  const mainViewMinWidth = max4XL
+    ? marketsWidth + tradingViewMinWidth + orderBookPanelWidth + space * 2
+    : tradingViewMinWidth + orderBookPanelWidth + space;
+
+  const mainContentMinWidth =
+    mainViewMinWidth +
+    orderEntryPanelWidth +
+    space +
+    (!max4XL && marketLayout === "left" ? marketsWidth + space : 0);
+
   const mainView = (
     <Flex
       direction="column"
       className="oui-flex-1 oui-overflow-hidden"
       gap={2}
       style={{
-        minWidth: max4XL
-          ? marketsWidth + tradingViewMinWidth + orderbookMinWidth + space * 2
-          : tradingViewMinWidth + orderbookMinWidth + space,
+        minWidth: mainViewMinWidth,
       }}
     >
       {symbolInfoBarView}
@@ -640,7 +768,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
             )}
 
             <SplitLayout
-              ref={props.max2XLSplitRef}
+              ref={props.max2XLSplitRef as any}
               style={{
                 minHeight: minScreenHeightSM,
                 minWidth: `min(${1024 - scrollBarWidth}px, 100%)`,
@@ -667,9 +795,9 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                   minWidth: 0,
                   minHeight: Math.max(
                     symbolInfoBarHeight +
-                    tradindviewMinHeight +
-                    orderbookMinHeight +
-                    space * 2,
+                      tradindviewMinHeight +
+                      orderbookMinHeight +
+                      space * 2,
                     props.orderEntryHeight,
                   ),
                   maxHeight:
@@ -708,6 +836,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                         pt={3}
                         r="2xl"
                         width={marketsWidth}
+                        className="oui-overflow-hidden"
                         style={{
                           minHeight:
                             tradindviewMinHeight + orderbookMinHeight + space,
@@ -719,7 +848,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                       </Box>
                     )}
                     <SplitLayout
-                      ref={props.tradingviewAndOrderbookSplitRef}
+                      ref={props.tradingviewAndOrderbookSplitRef as any}
                       mode="vertical"
                       className="oui-flex-1 oui-min-w-0"
                       onSizeChange={setOrderbookSplitHeightSM}
@@ -755,7 +884,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
                   </Flex>
                 </Flex>
                 <Flex
-                  ref={props.orderEntryViewRef}
+                  ref={props.orderEntryViewRef as any}
                   id="orderEntryView"
                   gapY={3}
                   direction="column"
@@ -831,10 +960,11 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
               id={activeId}
               showIndicator={showPositionIcon}
               dragOverlay
-              className={`${orderInteractionWidgets[
-                activeId as keyof typeof orderInteractionWidgets
-              ].className
-                } oui-shadow-lg oui-shadow-base-9`}
+              className={`${
+                orderInteractionWidgets[
+                  activeId as keyof typeof orderInteractionWidgets
+                ].className
+              } oui-shadow-lg oui-shadow-base-9`}
             >
               {
                 orderInteractionWidgets[
@@ -863,13 +993,15 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
         <Flex
           style={{
             minHeight: minScreenHeight,
-            minWidth: 1440 - scrollBarWidth,
+            minWidth: max4XL
+              ? Math.max(1440 - scrollBarWidth, mainContentMinWidth + space * 2)
+              : 1440 - scrollBarWidth,
           }}
           className={cn(
             props.className,
             "oui-justify-start",
             tradingViewFullScreen &&
-            "oui-relative oui-h-[calc(100vh-80px)] oui-w-screen oui-overflow-hidden !oui-p-0",
+              "oui-relative oui-h-[calc(100vh-80px)] oui-w-screen oui-overflow-hidden !oui-p-0",
           )}
           width="100%"
           p={2}
@@ -882,8 +1014,9 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
 
           {/* Main Content Group */}
           <Flex
+            itemAlign="stretch"
             className={cn(
-              "oui-flex-1 oui-overflow-hidden",
+              "oui-min-h-0 oui-flex-1 oui-overflow-hidden",
               layout === "left" && "oui-flex-row-reverse",
             )}
             gap={2}
@@ -891,6 +1024,7 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
             {!max4XL && marketLayout === "left" && marketsView}
             <SplitLayout
               className={cn("oui-flex oui-flex-1 oui-overflow-hidden")}
+              style={max4XL ? { minWidth: mainContentMinWidth } : undefined}
               onSizeChange={onSizeChange}
               disable={!horizontalDraggable}
             >
@@ -906,21 +1040,22 @@ export const DesktopLayout: React.FC<DesktopLayoutProps> = (props) => {
       <DragOverlay
         dropAnimation={dropAnimationConfig}
 
-      // style={{
-      //   transform: "scale(1.05)",
-      // }}
-      // transition="transform 200ms ease"
-      // className="oui-animate-pop"
+        // style={{
+        //   transform: "scale(1.05)",
+        // }}
+        // transition="transform 200ms ease"
+        // className="oui-animate-pop"
       >
         {activeId ? (
           <SortablePanel
             id={activeId}
             showIndicator={showPositionIcon}
             dragOverlay
-            className={`${orderInteractionWidgets[
-              activeId as keyof typeof orderInteractionWidgets
-            ].className
-              } oui-shadow-lg oui-shadow-base-9`}
+            className={`${
+              orderInteractionWidgets[
+                activeId as keyof typeof orderInteractionWidgets
+              ].className
+            } oui-shadow-lg oui-shadow-base-9`}
           >
             {
               orderInteractionWidgets[

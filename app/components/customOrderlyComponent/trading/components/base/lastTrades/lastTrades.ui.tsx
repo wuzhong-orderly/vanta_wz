@@ -29,7 +29,7 @@ export const LastTrades: FC<
       )}
       style={props.style}
     >
-      <Box className="oui-pr-1">
+      <Box className="oui-pe-1">
         <Header
           base={props.base}
           quote={props.quote}
@@ -71,7 +71,7 @@ const Row = (props: {
     // >
     //   <Box className={cn("oui-flex-1", classNames?.left)}>{left}</Box>
     //   <Box className={cn("oui-flex-1", classNames?.mid)}>{mid}</Box>
-    //   <Box className={cn("oui-flex-1 oui-text-right", classNames?.right)}>
+    //   <Box className={cn("oui-flex-1 oui-text-end", classNames?.right)}>
     //     {right}
     //   </Box>
     // </Flex>
@@ -84,7 +84,7 @@ const Row = (props: {
     >
       <div className={cn("oui-flex-1", classNames?.left)}>{left}</div>
       <div className={cn("oui-flex-1", classNames?.mid)}>{mid}</div>
-      <div className={cn("oui-flex-1 oui-text-right", classNames?.right)}>
+      <div className={cn("oui-flex-1 oui-text-end", classNames?.right)}>
         {right}
       </div>
     </Grid>
@@ -129,7 +129,7 @@ const List = (props: {
         props.className,
         "oui-overflow-auto",
       )}
-      contentClassName="!oui-space-y-0 oui-pr-[-4px]"
+      contentClassName="!oui-space-y-0 -oui-me-[4px]"
       renderItem={(item, index) => {
         return (
           <Row

@@ -60,7 +60,7 @@ export const RemovablePanel: React.FC<
       >
         {showIndicator && (
           <div
-            className="oui-absolute oui-right-[1px] oui-top-[18px]"
+            className="oui-absolute oui-end-[1px] oui-top-[18px]"
             onClick={() => setOpen((v) => !v)}
           >
             <IndicatorIcon
