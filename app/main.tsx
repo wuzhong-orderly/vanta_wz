@@ -89,6 +89,13 @@ const router = createBrowserRouter([
     children: [
       { path: 'invite', element: <InvitePage /> },
       {
+        path: 'points',
+        element: <PointsLayout />,
+        children: [
+          { index: true, element: <PointsIndex /> },
+        ],
+      },
+      {
         element: <RequireInvite />,
         children: [
           { index: true, element: <IndexPage /> },
@@ -150,13 +157,6 @@ const router = createBrowserRouter([
               { index: true, element: <SwapIndex /> },
             ],
           },
-          {
-            path: 'points',
-            element: <PointsLayout />,
-            children: [
-              { index: true, element: <PointsIndex /> },
-            ],
-          },
         ],
       },
     ],
@@ -191,4 +191,3 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-

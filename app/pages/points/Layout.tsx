@@ -3,7 +3,7 @@ import { Scaffold } from "@orderly.network/ui-scaffold";
 import { useOrderlyConfig } from "@/utils/config";
 import { useNav } from "@/hooks/useNav";
 
-export default function LeaderboardLayout() {
+export default function PointsLayout() {
   const config = useOrderlyConfig();
   const { onRouteChange } = useNav();
 
@@ -17,7 +17,10 @@ export default function LeaderboardLayout() {
       routerAdapter={{
         onRouteChange,
       }}
-      bottomNavProps={config.scaffold.bottomNavProps}
+      bottomNavProps={{
+        ...config.scaffold.bottomNavProps,
+        current: "/points",
+      }}
     >
       <Outlet />
     </Scaffold>

@@ -14,10 +14,9 @@ import {
   PortfolioInactiveIcon,
   TradingActiveIcon,
   TradingInactiveIcon,
-  LeaderboardActiveIcon,
-  LeaderboardInactiveIcon,
   MarketsActiveIcon,
   MarketsInactiveIcon,
+  SpotIcon,
   useScreen,
   Flex,
   cn,
@@ -78,11 +77,7 @@ const DEFAULT_ENABLED_MENUS = [
   { name: "Portfolio", href: "/portfolio", translationKey: "common.portfolio" },
   { name: "Markets", href: "/markets", translationKey: "common.markets" },
   { name: "Swap", href: "/swap", translationKey: "extend.swap" },
-  {
-    name: "Leaderboard",
-    href: "/leaderboard",
-    translationKey: "tradingLeaderboard.leaderboard",
-  },
+  { name: "Points", href: "/points", translationKey: "tradingPoints.points" },
 ];
 
 const getCustomMenuItems = (): MainNavItem[] => {
@@ -195,6 +190,52 @@ const getPnLBackgroundImages = (): string[] => {
   ];
 };
 
+const PointsActiveIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="oui-text-primary"
+  >
+    <path
+      d="M12 3.25l2.27 4.6 5.08.74-3.67 3.58.87 5.06L12 14.84l-4.55 2.39.87-5.06-3.67-3.58 5.08-.74L12 3.25z"
+      fill="currentColor"
+    />
+    <path
+      d="M7.75 20.25h8.5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const PointsInactiveIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="oui-text-base-contrast-36"
+  >
+    <path
+      d="M12 3.25l2.27 4.6 5.08.74-3.67 3.58.87 5.06L12 14.84l-4.55 2.39.87-5.06-3.67-3.58 5.08-.74L12 3.25z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M7.75 20.25h8.5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const getBottomNavIcon = (menuName: string) => {
   switch (menuName) {
     case "Trading":
@@ -202,20 +243,25 @@ const getBottomNavIcon = (menuName: string) => {
         activeIcon: <TradingActiveIcon />,
         inactiveIcon: <TradingInactiveIcon />,
       };
+    case "Swap":
+      return {
+        activeIcon: <SpotIcon className="oui-text-primary" />,
+        inactiveIcon: <SpotIcon className="oui-text-base-contrast-36" />,
+      };
     case "Portfolio":
       return {
         activeIcon: <PortfolioActiveIcon />,
         inactiveIcon: <PortfolioInactiveIcon />,
       };
-    case "Leaderboard":
-      return {
-        activeIcon: <LeaderboardActiveIcon />,
-        inactiveIcon: <LeaderboardInactiveIcon />,
-      };
     case "Markets":
       return {
         activeIcon: <MarketsActiveIcon />,
         inactiveIcon: <MarketsInactiveIcon />,
+      };
+    case "Points":
+      return {
+        activeIcon: <PointsActiveIcon />,
+        inactiveIcon: <PointsInactiveIcon />,
       };
     default:
       throw new Error(`Unsupported menu name: ${menuName}`);
@@ -345,25 +391,28 @@ export const useOrderlyConfig = () => {
     // For mobile left nav, flatten into simple items
     const mobileMenus = [
       { name: t("extend.nav.futures", "Futures"), href: "/" },
-      { name: t("extend.swap"), href: "/swap" },
-      { name: t("common.markets"), href: "/markets" },
+      { name: t("common.spot", "Spot"), href: "/swap" },
       { name: t("common.portfolio"), href: "/portfolio" },
-      { name: t("tradingLeaderboard.leaderboard"), href: "/leaderboard" },
-      { name: t("points.eyebrow", "Vanta Genesis Points"), href: "/points" },
+      { name: t("common.markets"), href: "/markets" },
+      { name: t("tradingPoints.points", "Points"), href: "/points" },
     ];
 
-    const supportedBottomNavMenus = [
-      "Trading",
-      "Portfolio",
-      "Markets",
-      "Leaderboard",
-    ];
-    const bottomNavMenus = enabledMenus
-      .filter((menu) => supportedBottomNavMenus.includes(menu.name))
+    const bottomNavOrder = ["Trading", "Swap", "Portfolio", "Markets", "Points"];
+    const bottomNavMenus = bottomNavOrder
+      .map((menuName) => enabledMenus.find((menu) => menu.name === menuName))
+      .filter((menu): menu is (typeof enabledMenus)[number] => Boolean(menu))
       .map((menu) => {
         const icons = getBottomNavIcon(menu.name);
+        const name =
+          menu.name === "Trading"
+            ? t("extend.nav.futures", "Futures")
+            : menu.name === "Swap"
+              ? t("common.spot", "Spot")
+              : menu.name === "Points"
+                ? t("tradingPoints.points", "Points")
+                : t(menu.translationKey);
         return {
-          name: t(menu.translationKey),
+          name,
           href: menu.href,
           ...icons,
         };
