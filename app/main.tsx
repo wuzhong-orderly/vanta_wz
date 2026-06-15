@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { RequireInvite } from './components/RequireInvite';
 import { withBasePath } from './utils/base-path';
 import { getRuntimeConfig } from './utils/runtime-config';
 
@@ -35,6 +36,7 @@ const SwapLayout = lazy(() => import('./pages/swap/Layout'));
 const SwapIndex = lazy(() => import('./pages/swap/Index'));
 const PointsLayout = lazy(() => import('./pages/points/Layout'));
 const PointsIndex = lazy(() => import('./pages/points/Index'));
+const InvitePage = lazy(() => import('./pages/Invite'));
 
 
 async function loadRuntimeConfig() {
@@ -85,70 +87,76 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <ErrorBoundary />,
     children: [
-      { index: true, element: <IndexPage /> },
+      { path: 'invite', element: <InvitePage /> },
       {
-        path: 'perp',
-        element: <PerpLayout />,
+        element: <RequireInvite />,
         children: [
-          { index: true, element: <PerpIndex /> },
-          { path: ':symbol', element: <PerpSymbol /> },
-        ],
-      },
-      {
-        path: 'portfolio',
-        element: <PortfolioLayout />,
-        children: [
-          { index: true, element: <PortfolioIndex /> },
-          { path: 'positions', element: <PortfolioPositions /> },
-          { path: 'orders', element: <PortfolioOrders /> },
-          { path: 'assets', element: <PortfolioAssets /> },
-          { path: 'api-key', element: <PortfolioApiKey /> },
-          { path: 'fee', element: <PortfolioFee /> },
-          { path: 'history', element: <PortfolioHistory /> },
-          { path: 'setting', element: <PortfolioSetting /> },
-        ],
-      },
-      {
-        path: 'markets',
-        element: <MarketsLayout />,
-        children: [
-          { index: true, element: <MarketsIndex /> },
-        ],
-      },
-      {
-        path: 'leaderboard',
-        element: <LeaderboardLayout />,
-        children: [
-          { index: true, element: <LeaderboardIndex /> },
-        ],
-      },
-      {
-        path: 'rewards',
-        element: <RewardsLayout />,
-        children: [
-          { index: true, element: <RewardsIndex /> },
-          { path: 'affiliate', element: <RewardsAffiliate /> },
-        ],
-      },
-      {
-        path: 'vaults',
-        element: <VaultsLayout />,
-        children: [
-          { index: true, element: <VaultsIndex /> },
-        ],
-      },
-      {
-        path: 'swap',
-        element: <SwapLayout />,
-        children: [
-          { index: true, element: <SwapIndex /> },
-        ],
-      },
-      {
-        path: 'points',
-        element: <PointsLayout />,
-        children: [
-          { index: true, element: <PointsIndex /> },
+          { index: true, element: <IndexPage /> },
+          {
+            path: 'perp',
+            element: <PerpLayout />,
+            children: [
+              { index: true, element: <PerpIndex /> },
+              { path: ':symbol', element: <PerpSymbol /> },
+            ],
+          },
+          {
+            path: 'portfolio',
+            element: <PortfolioLayout />,
+            children: [
+              { index: true, element: <PortfolioIndex /> },
+              { path: 'positions', element: <PortfolioPositions /> },
+              { path: 'orders', element: <PortfolioOrders /> },
+              { path: 'assets', element: <PortfolioAssets /> },
+              { path: 'api-key', element: <PortfolioApiKey /> },
+              { path: 'fee', element: <PortfolioFee /> },
+              { path: 'history', element: <PortfolioHistory /> },
+              { path: 'setting', element: <PortfolioSetting /> },
+            ],
+          },
+          {
+            path: 'markets',
+            element: <MarketsLayout />,
+            children: [
+              { index: true, element: <MarketsIndex /> },
+            ],
+          },
+          {
+            path: 'leaderboard',
+            element: <LeaderboardLayout />,
+            children: [
+              { index: true, element: <LeaderboardIndex /> },
+            ],
+          },
+          {
+            path: 'rewards',
+            element: <RewardsLayout />,
+            children: [
+              { index: true, element: <RewardsIndex /> },
+              { path: 'affiliate', element: <RewardsAffiliate /> },
+            ],
+          },
+          {
+            path: 'vaults',
+            element: <VaultsLayout />,
+            children: [
+              { index: true, element: <VaultsIndex /> },
+            ],
+          },
+          {
+            path: 'swap',
+            element: <SwapLayout />,
+            children: [
+              { index: true, element: <SwapIndex /> },
+            ],
+          },
+          {
+            path: 'points',
+            element: <PointsLayout />,
+            children: [
+              { index: true, element: <PointsIndex /> },
+            ],
+          },
         ],
       },
     ],

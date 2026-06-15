@@ -1,6 +1,5 @@
 import { Outlet } from "react-router-dom";
 import { Scaffold } from "@orderly.network/ui-scaffold";
-import { InviteGate } from "@/components/InviteGate";
 import { useOrderlyConfig } from "@/utils/config";
 import { useNav } from "@/hooks/useNav";
 
@@ -18,9 +17,7 @@ export default function PerpLayout() {
       }}
       bottomNavProps={config.scaffold.bottomNavProps}
     >
-      <InviteGate>
-        <Outlet />
-      </InviteGate>
+      <Outlet />
     </Scaffold>
   );
 }
