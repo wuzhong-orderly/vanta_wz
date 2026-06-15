@@ -1,7 +1,8 @@
 import { getRuntimeConfig } from "./runtime-config";
 
-const POINTS_API_BASE_URL =
-  (getRuntimeConfig("VITE_POINTS_API_BASE_URL") || "").replace(/\/+$/, "");
+function getPointsApiBaseUrl() {
+  return (getRuntimeConfig("VITE_POINTS_API_BASE_URL") || "").replace(/\/+$/, "");
+}
 
 export async function fetchPointsJson<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
@@ -33,7 +34,9 @@ export async function fetchPointsJson<T>(url: string, init?: RequestInit): Promi
 }
 
 export function resolvePointsApiUrl(url: string) {
-  if (!POINTS_API_BASE_URL) {
+  const pointsApiBaseUrl = getPointsApiBaseUrl();
+
+  if (!pointsApiBaseUrl) {
     return url;
   }
 
@@ -43,5 +46,5 @@ export function resolvePointsApiUrl(url: string) {
       ? url
       : `/${url}`;
 
-  return `${POINTS_API_BASE_URL}${normalizedPath}`;
+  return `${pointsApiBaseUrl}${normalizedPath}`;
 }

@@ -11,7 +11,7 @@ import {
 import { generatePageTitle } from "@/utils/utils";
 import { getPageMeta } from "@/utils/seo";
 import { renderSEOTags } from "@/utils/seo-tags";
-import { getRuntimeConfig } from "@/utils/runtime-config";
+import { resolvePointsApiUrl as resolvePointsApiUrlFromRuntime } from "@/utils/points-api";
 import "./points.css";
 
 type CampaignConfig = {
@@ -60,9 +60,6 @@ type LoadState = "idle" | "loading" | "error";
 
 const MAX_LEADERBOARD_ITEMS = 100;
 const LEADERBOARD_PAGE_SIZE = 20;
-
-const POINTS_API_BASE_URL =
-  (getRuntimeConfig("VITE_POINTS_API_BASE_URL") || "").replace(/\/+$/, "");
 
 export default function PointsIndex() {
   const { t } = useTranslation();
@@ -471,17 +468,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 function resolvePointsApiUrl(url: string) {
-  if (!POINTS_API_BASE_URL) {
-    return url;
-  }
-
-  const normalizedPath = url.startsWith("/points-api/")
-    ? `/api/${url.slice("/points-api/".length)}`
-    : url.startsWith("/")
-      ? url
-      : `/${url}`;
-
-  return `${POINTS_API_BASE_URL}${normalizedPath}`;
+  return resolvePointsApiUrlFromRuntime(url);
 }
 
 function formatPoints(value: string, locale = "en") {

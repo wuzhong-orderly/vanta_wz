@@ -1,7 +1,9 @@
 import { useEffect, useMemo } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { InviteGate } from "@/components/InviteGate";
 import { DEFAULT_SYMBOL } from "@/utils/storage";
+import { generatePageTitle } from "@/utils/utils";
 
 export default function InvitePage() {
   const [searchParams] = useSearchParams();
@@ -9,11 +11,17 @@ export default function InvitePage() {
     () => sanitizeRedirectPath(searchParams.get("redirect")),
     [searchParams]
   );
+  const pageTitle = generatePageTitle("Invite");
 
   return (
-    <InviteGate>
-      <InviteUnlockRedirect redirectPath={redirectPath} />
-    </InviteGate>
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+      </Helmet>
+      <InviteGate>
+        <InviteUnlockRedirect redirectPath={redirectPath} />
+      </InviteGate>
+    </>
   );
 }
 
