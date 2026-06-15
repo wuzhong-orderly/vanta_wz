@@ -1,5 +1,5 @@
 window.__RUNTIME_CONFIG__ = {
-  "VITE_ORDERLY_BROKER_ID": "vanta_exchange",
+  "VITE_ORDERLY_BROKER_ID": "demo",
   "VITE_ORDERLY_BROKER_NAME": "Vanta",
   "VITE_BROKER_EOA_ADDRESS": "0x5c4fc2a0fda779922c60aaa32ffc48d95b772c58",
   "VITE_DISABLE_MAINNET": "false",
@@ -38,8 +38,8 @@ window.__RUNTIME_CONFIG__ = {
   "VITE_CUSTOM_PNL_POSTER_COUNT": "3",
   "VITE_TRADING_VIEW_COLOR_CONFIG": "{\"upColor\":\"#0FB276\",\"downColor\":\"#F5464B\",\"pnlUpColor\":\"#0FB276\",\"pnlDownColor\":\"#F5464B\"}",
   "VITE_ANALYTICS_SCRIPT": "",
-  // "VITE_POINTS_API_BASE_URL": "http://localhost:4100",
-  "VITE_POINTS_API_BASE_URL": "https://vantawz-production.up.railway.app",
+  "VITE_POINTS_API_BASE_URL": "http://localhost:4100",
+  // "VITE_POINTS_API_BASE_URL": "https://vantawz-production.up.railway.app",
   "VITE_SYMBOL_LIST": "",
   "VITE_RESTRICTED_REGIONS": "China, United States",
   "VITE_WHITELISTED_IPS": ""

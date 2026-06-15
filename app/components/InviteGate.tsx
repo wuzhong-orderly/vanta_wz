@@ -16,6 +16,7 @@ type GateState = "idle" | "checking" | "bound" | "unbound" | "error" | "binding"
 const inviteCodeLength = 6;
 const verifiedInviteAddresses = new Map<string, string>();
 const verifiedOrderlyRefCodes = new Map<string, boolean>();
+const checkedOrderlyAccountRefBinding = new Map<string, boolean>();
 
 export function InviteGate({
   children,
@@ -56,7 +57,7 @@ export function InviteGate({
     if (verifiedInviteAddresses.has(normalizedAddress)) {
       setGateState("bound");
       setBoundAddress(address);
-      void applyOrderlyRefCode(cachedOrderlyRefCode);
+      void applyOrderlyRefCode(cachedOrderlyRefCode, account.accountId);
       void checkInviteBinding(address, { silent: true });
       return;
     }
@@ -100,7 +101,7 @@ export function InviteGate({
       setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
         verifiedInviteAddresses.set(normalizedNextAddress, response.orderlyRefCode ?? "");
-        void applyOrderlyRefCode(response.orderlyRefCode);
+        void applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
       } else {
         verifiedInviteAddresses.delete(normalizedNextAddress);
       }
@@ -136,7 +137,7 @@ export function InviteGate({
       setGateState(response.bound ? "bound" : "unbound");
       if (response.bound) {
         verifiedInviteAddresses.set(normalizeAddress(address), response.orderlyRefCode ?? "");
-        void applyOrderlyRefCode(response.orderlyRefCode);
+        void applyOrderlyRefCode(response.orderlyRefCode, account.accountId);
       }
       setBoundAddress(response.bound ? address : "");
       setMessage(response.bound ? "Invite verified." : "Invite code was not bound.");
@@ -254,43 +255,73 @@ function normalizeAddress(address: string) {
   return address.trim().toLowerCase();
 }
 
-async function applyOrderlyRefCode(orderlyRefCode?: string) {
+async function applyOrderlyRefCode(orderlyRefCode?: string, accountId?: string) {
   const refCode = orderlyRefCode?.trim();
 
   if (!refCode || typeof window === "undefined") {
     return;
   }
 
-  const isValidRefCode = await verifyOrderlyRefCode(refCode);
-
-  if (!isValidRefCode) {
-    removeOrderlyRefCode(refCode);
-    return;
+  // If account already has a bound referral code, don't force another one.
+  if (accountId) {
+    const hasBoundRefCode = await hasOrderlyBoundReferralCode(accountId);
+    if (hasBoundRefCode) {
+      return;
+    }
   }
 
   const url = new URL(window.location.href);
 
-  if (url.searchParams.get("ref") === refCode) {
+  // Never override existing URL ref code.
+  if (url.searchParams.get("ref")?.trim()) {
+    return;
+  }
+
+  const isValidRefCode = await verifyOrderlyRefCode(refCode);
+
+  if (!isValidRefCode) {
+    // Backend ref code may not exist in Orderly yet; skip silently.
     return;
   }
 
   url.searchParams.set("ref", refCode);
-  window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
-function removeOrderlyRefCode(refCode: string) {
-  if (typeof window === "undefined") {
-    return;
+async function hasOrderlyBoundReferralCode(accountId: string) {
+  const normalizedAccountId = accountId.trim();
+
+  if (!normalizedAccountId) {
+    return false;
   }
 
-  const url = new URL(window.location.href);
-
-  if (url.searchParams.get("ref") !== refCode) {
-    return;
+  const cached = checkedOrderlyAccountRefBinding.get(normalizedAccountId);
+  if (cached !== undefined) {
+    return cached;
   }
 
-  url.searchParams.delete("ref");
-  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  try {
+    const url = new URL("https://api.orderly.org/v1/public/referral/check_ref_code");
+    url.searchParams.set("account_id", normalizedAccountId);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      return true;
+    }
+
+    const data = (await response.json()) as {
+      success?: boolean;
+      data?: { referral_code?: string };
+    };
+
+    const referralCode = data.data?.referral_code?.trim();
+    const hasBoundCode = Boolean(data.success && referralCode);
+    checkedOrderlyAccountRefBinding.set(normalizedAccountId, hasBoundCode);
+    return hasBoundCode;
+  } catch {
+    // Fail-safe: skip forcing URL referral code when check endpoint is unavailable.
+    return true;
+  }
 }
 
 async function verifyOrderlyRefCode(refCode: string) {
