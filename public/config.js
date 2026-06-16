@@ -42,5 +42,6 @@ window.__RUNTIME_CONFIG__ = {
   "VITE_POINTS_API_BASE_URL": "https://vantawz-production.up.railway.app",
   "VITE_SYMBOL_LIST": "",
   "VITE_RESTRICTED_REGIONS": "China, United States",
+  "VITE_RESTRICTED_COUNTRY_CITIES": "Canada-Barrie, Canada-Belleville, Canada-Brampton, Canada-Brant, Canada-Brantford, Canada-Brockville, Canada-Burlington, Canada-Cambridge, Canada-Clarence-Rockland, Canada-Cornwall, Canada-Dryden, Canada-Elliot Lake, Canada-Greater Sudbury, Canada-Guelph, Canada-Haldimand County, Canada-Hamilton, Canada-Kawartha Lakes, Canada-Kenora, Canada-Kingston, Canada-Kitchener, Canada-London, Canada-Markham, Canada-Mississauga, Canada-Niagara Falls, Canada-Norfolk County, Canada-North Bay, Canada-Orillia, Canada-Oshawa, Canada-Ottawa, Canada-Owen Sound, Canada-Pembroke, Canada-Peterborough, Canada-Pickering, Canada-Port Colborne, Canada-Prince Edward County, Canada-Quinte West, Canada-Richmond Hill, Canada-Sarnia, Canada-Sault Ste. Marie, Canada-Sault Ste Marie, Canada-St. Catharines, Canada-St Catharines, Canada-St. Thomas, Canada-St Thomas, Canada-Stratford, Canada-Temiskaming Shores, Canada-Thorold, Canada-Thunder Bay, Canada-Timmins, Canada-Toronto, Canada-Vaughan, Canada-Waterloo, Canada-Welland, Canada-Windsor, Canada-Woodstock",
   "VITE_WHITELISTED_IPS": ""
 };

@@ -6,11 +6,13 @@ import { LocaleProvider, LocaleCode, LocaleEnum, defaultLanguages } from "@order
 import { withBasePath } from "@/utils/base-path";
 import { getSEOConfig, getUserLanguage } from "@/utils/seo";
 import { getRuntimeConfigBoolean, getRuntimeConfigArray, getRuntimeConfig } from "@/utils/runtime-config";
+import { getRestrictedRegions } from "@/utils/restricted-regions";
 import { createSymbolDataAdapter } from "@/utils/symbol-filter";
+import { useIpRestriction } from "@/hooks/useIpRestriction";
 import { DemoGraduationChecker } from "@/components/DemoGraduationChecker";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import ServiceDisclaimerDialog from "./ServiceDisclaimerDialog";
-import { ThemeConfig, LIGHT_THEME_CSS_VARS, ThemeCssVars } from "@orderly.network/ui";
+import { ThemeConfig, ThemeCssVars } from "@orderly.network/ui";
 
 const NETWORK_ID_KEY = "orderly_network_id";
 
@@ -238,6 +240,7 @@ const WalletConnector = lazy(() => import("@/components/orderlyProvider/walletCo
 const OrderlyProvider = (props: { children: ReactNode }) => {
 	const config = useOrderlyConfig();
 	const networkId = getNetworkId();
+	const { customRestrictedIps } = useIpRestriction(networkId);
 
 	const privyAppId = getRuntimeConfig('VITE_PRIVY_APP_ID');
 	const usePrivy = !!privyAppId;
@@ -344,9 +347,13 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 			cssVars: CUSTOM_LIGHT_THEME_CSS_VARS,
 		},
 	];
+	const restrictedRegions = Array.from(new Set([
+		...getRestrictedRegions(),
+	]));
 
 	const appProvider = (
 		<OrderlyAppProvider
+			key={`orderly-provider-${networkId}-${customRestrictedIps.join(",")}`}
 			brokerId={getRuntimeConfig('VITE_ORDERLY_BROKER_ID')}
 			brokerName={getRuntimeConfig('VITE_ORDERLY_BROKER_NAME')}
 			networkId={networkId}
@@ -357,7 +364,8 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 			defaultChain={defaultChain}
 			dataAdapter={dataAdapter}
 			restrictedInfo={{
-				customRestrictedRegions: getRuntimeConfigArray('VITE_RESTRICTED_REGIONS'),
+				customRestrictedRegions: restrictedRegions,
+				customRestrictedIps,
 			}}
 			themes={themes}
 		>

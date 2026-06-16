@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { getRuntimeConfigArray } from "@/utils/runtime-config";
+import {
+  IpLocationInfo,
+  isCountryCityRestricted,
+} from "@/utils/restricted-regions";
+import type { NetworkId } from "@orderly.network/types";
 import ipRangeCheck from "ip-range-check";
 
 function isIpWhitelisted(ip: string, whitelistPatterns: string[]): boolean {
@@ -13,22 +18,23 @@ function isIpWhitelisted(ip: string, whitelistPatterns: string[]): boolean {
   });
 }
 
-export const useIpRestriction = () => {
+const getIpInfoUrl = (networkId: NetworkId) =>
+  networkId === "testnet"
+    ? "https://testnet-api.orderly.org/v1/ip_info"
+    : "https://api.orderly.org/v1/ip_info";
+
+export const useIpRestriction = (networkId: NetworkId) => {
   const [isRestricted, setIsRestricted] = useState<boolean>(false);
-  const [ipInfo, setIpInfo] = useState<{ ip: string; region: string } | null>(
-    null
-  );
+  const [ipInfo, setIpInfo] = useState<IpLocationInfo | null>(null);
 
   useEffect(() => {
-    fetch("https://api.orderly.org/v1/ip_info")
+    fetch(getIpInfoUrl(networkId))
       .then((res) => res.json())
       .then((data) => {
-        const userRegion = data?.data?.region || "";
-        const userIp = data?.data?.ip || "";
-        setIpInfo({ ip: userIp, region: userRegion });
+        const locationInfo: IpLocationInfo = data?.data || {};
+        const userIp = locationInfo.ip || "";
+        setIpInfo(locationInfo);
 
-        const restrictedRegions =
-          getRuntimeConfigArray("VITE_RESTRICTED_REGIONS") || [];
         const whitelistIps =
           getRuntimeConfigArray("VITE_WHITELISTED_IPS") || [];
 
@@ -36,15 +42,18 @@ export const useIpRestriction = () => {
           setIsRestricted(false);
           return;
         }
-        if (restrictedRegions.includes(userRegion)) {
-          setIsRestricted(true);
-        }
+
+        setIsRestricted(isCountryCityRestricted(locationInfo));
       })
       .catch((error) => {
         console.error("Failed to fetch IP info:", error);
         setIsRestricted(false);
       });
-  }, []);
+  }, [networkId]);
 
-  return { isRestricted, ipInfo };
+  return {
+    isRestricted,
+    ipInfo,
+    customRestrictedIps: isRestricted && ipInfo?.ip ? [ipInfo.ip] : [],
+  };
 };
