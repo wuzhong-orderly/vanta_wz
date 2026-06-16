@@ -325,9 +325,10 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 	}
 
 	const availableLanguages = getAvailableLanguages();
-	const filteredLanguages = defaultLanguages.filter(lang =>
-		availableLanguages.includes(lang.localCode)
-	);
+	const languageByCode = new Map(defaultLanguages.map(lang => [lang.localCode, lang]));
+	const filteredLanguages = availableLanguages
+		.map(code => languageByCode.get(code))
+		.filter((lang): lang is (typeof defaultLanguages)[number] => Boolean(lang));
 
 	const themes: ThemeConfig[] = [
 		{
