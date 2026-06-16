@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, lazy, Suspense } from "react";
+import { ReactNode, useCallback, lazy, Suspense, useEffect, useState } from "react";
 import { OrderlyAppProvider } from "@orderly.network/react-app";
 import { useOrderlyConfig } from "@/utils/config";
 import type { NetworkId } from "@orderly.network/types";
@@ -9,6 +9,12 @@ import { getRuntimeConfigBoolean, getRuntimeConfigArray, getRuntimeConfig } from
 import { getRestrictedRegions } from "@/utils/restricted-regions";
 import { createSymbolDataAdapter } from "@/utils/symbol-filter";
 import { useIpRestriction } from "@/hooks/useIpRestriction";
+import {
+	getStoredOrderlyRefCode,
+	getUrlOrderlyRefCode,
+	markInvalidOrderlyRefCode,
+	verifyOrderlyRefCode,
+} from "@/utils/orderly-referral";
 import { DemoGraduationChecker } from "@/components/DemoGraduationChecker";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import ServiceDisclaimerDialog from "./ServiceDisclaimerDialog";
@@ -237,10 +243,45 @@ const getDefaultLanguage = (): LocaleCode => {
 const PrivyConnector = lazy(() => import("@/components/orderlyProvider/privyConnector"));
 const WalletConnector = lazy(() => import("@/components/orderlyProvider/walletConnector"));
 
+const useOrderlyReferralPreflight = () => {
+	const [isReady, setIsReady] = useState(() => typeof window === "undefined");
+
+	useEffect(() => {
+		const url = new URL(window.location.href);
+		const refCode = getUrlOrderlyRefCode(url) || getStoredOrderlyRefCode();
+
+		if (!refCode) {
+			setIsReady(true);
+			return;
+		}
+
+		let cancelled = false;
+
+		void verifyOrderlyRefCode(refCode).then((isValid) => {
+			if (cancelled) {
+				return;
+			}
+
+			if (!isValid) {
+				markInvalidOrderlyRefCode(url, refCode);
+			}
+
+			setIsReady(true);
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	return isReady;
+};
+
 const OrderlyProvider = (props: { children: ReactNode }) => {
 	const config = useOrderlyConfig();
 	const networkId = getNetworkId();
 	const { customRestrictedIps } = useIpRestriction(networkId);
+	const referralPreflightReady = useOrderlyReferralPreflight();
 
 	const privyAppId = getRuntimeConfig('VITE_PRIVY_APP_ID');
 	const usePrivy = !!privyAppId;
@@ -378,6 +419,10 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 	const walletConnector = usePrivy
 		? <PrivyConnector networkId={networkId}>{appProvider}</PrivyConnector>
 		: <WalletConnector networkId={networkId}>{appProvider}</WalletConnector>;
+
+	if (!referralPreflightReady) {
+		return <LoadingSpinner />;
+	}
 
 	return (
 		<LocaleProvider

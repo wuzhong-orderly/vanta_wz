@@ -2,6 +2,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useAccount, useWalletConnector } from "@orderly.network/hooks";
 import { CheckCircle2, KeyRound, Loader2, Lock, Wallet } from "lucide-react";
 import { fetchPointsJson } from "@/utils/points-api";
+import {
+  getUrlOrderlyRefCode,
+  markInvalidOrderlyRefCode,
+  verifyOrderlyRefCode,
+} from "@/utils/orderly-referral";
 
 type InviteBindingResponse = {
   bound: boolean;
@@ -15,7 +20,6 @@ type GateState = "idle" | "checking" | "bound" | "unbound" | "error" | "binding"
 
 const inviteCodeLength = 6;
 const verifiedInviteAddresses = new Map<string, string>();
-const verifiedOrderlyRefCodes = new Map<string, boolean>();
 const checkedOrderlyAccountRefBinding = new Map<string, boolean>();
 
 export function InviteGate({
@@ -262,6 +266,21 @@ async function applyOrderlyRefCode(orderlyRefCode?: string, accountId?: string) 
     return undefined;
   }
 
+  const url = new URL(window.location.href);
+  const existingRefCode = getUrlOrderlyRefCode(url);
+
+  if (existingRefCode) {
+    const isExistingRefCodeValid = await verifyOrderlyRefCode(existingRefCode);
+
+    if (!isExistingRefCodeValid) {
+      markInvalidOrderlyRefCode(url, existingRefCode);
+      return undefined;
+    }
+
+    localStorage.setItem("referral_code", existingRefCode);
+    return existingRefCode;
+  }
+
   // If account already has a bound referral code, don't force another one.
   if (accountId) {
     const hasBoundRefCode = await hasOrderlyBoundReferralCode(accountId);
@@ -270,19 +289,10 @@ async function applyOrderlyRefCode(orderlyRefCode?: string, accountId?: string) 
     }
   }
 
-  const url = new URL(window.location.href);
-  const existingRefCode = url.searchParams.get("ref")?.trim();
-
-  // Never override existing URL ref code.
-  if (existingRefCode) {
-    localStorage.setItem("referral_code", existingRefCode);
-    return existingRefCode;
-  }
-
   const isValidRefCode = await verifyOrderlyRefCode(refCode);
 
   if (!isValidRefCode) {
-    // Backend ref code may not exist in Orderly yet; skip silently.
+    markInvalidOrderlyRefCode(url, refCode);
     return undefined;
   }
 
@@ -325,40 +335,6 @@ async function hasOrderlyBoundReferralCode(accountId: string) {
   } catch {
     // Fail-safe: skip forcing URL referral code when check endpoint is unavailable.
     return true;
-  }
-}
-
-async function verifyOrderlyRefCode(refCode: string) {
-  const normalizedRefCode = refCode.trim();
-
-  if (!normalizedRefCode) {
-    return false;
-  }
-
-  const cachedResult = verifiedOrderlyRefCodes.get(normalizedRefCode);
-
-  if (cachedResult !== undefined) {
-    return cachedResult;
-  }
-
-  try {
-    const url = new URL("https://api.orderly.org/v1/public/referral/verify_ref_code");
-    url.searchParams.set("referral_code", normalizedRefCode);
-
-    const response = await fetch(url.toString());
-
-    if (!response.ok) {
-      verifiedOrderlyRefCodes.set(normalizedRefCode, false);
-      return false;
-    }
-
-    const data = (await response.json()) as { success?: boolean; code?: number };
-    const isValid = data.success !== false && data.code !== -1;
-    verifiedOrderlyRefCodes.set(normalizedRefCode, isValid);
-    return isValid;
-  } catch {
-    verifiedOrderlyRefCodes.set(normalizedRefCode, false);
-    return false;
   }
 }
 
