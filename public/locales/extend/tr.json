@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "Hisseler",
   "markets.rwaCategory.indices": "Endeksler",
   "markets.rwaCategory.commodities": "Emtialar",
+  "markets.rwaCategory.fx": "Forex",
   "markets.rwaCategory.others": "Diger",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta bölgenizde kullanılamıyor. Vanta ürün ve hizmetlerine erişim, yaptırım kısıtlamalarına tabi bölgeler veya hizmetlerimizin kullanıma uygun olmadığı yerler dahil olmak üzere belirli yargı bölgelerinde kısıtlanmıştır. Daha fazla bilgi için lütfen Kullanım Şartlarımızı inceleyin. Bunun bir hata olduğunu düşünüyorsanız, lütfen sayfayı yenileyin veya Telegram üzerinden destek ekibimizle iletişime geçin."

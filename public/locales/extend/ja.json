@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "株式",
   "markets.rwaCategory.indices": "指数",
   "markets.rwaCategory.commodities": "コモディティ",
+  "markets.rwaCategory.fx": "外国為替",
   "markets.rwaCategory.others": "その他",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vantaはお住まいの地域ではご利用いただけません。Vantaの製品およびサービスへのアクセスは、制裁規制の対象地域や当社サービスの利用が認められていない地域を含む、一部の法域で制限されています。詳しくは、利用規約をご確認ください。これが誤りだと思われる場合は、ページを更新するか、Telegramでサポートチームにお問い合わせください。"

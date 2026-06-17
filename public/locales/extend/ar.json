@@ -2,6 +2,7 @@
   "markets.rwaCategory.stocks": "الاسهم",
   "markets.rwaCategory.indices": "المؤشرات",
   "markets.rwaCategory.commodities": "السلع",
+  "markets.rwaCategory.fx": "العملات الأجنبية",
   "markets.rwaCategory.others": "اخرى",
   "common.rwa": "TradFi",
   "extend.nav.futures": "العقود الآجلة",

@@ -7,7 +7,7 @@ type RwaMarketRecord = API.MarketInfoExt & {
   rwaCategory?: string;
 };
 
-function getRwaTabLabel(category: "stocks" | "indices" | "commodities" | "others"): string {
+function getRwaTabLabel(category: "stocks" | "indices" | "commodities" | "fx" | "others"): string {
   return i18n.t(`markets.rwaCategory.${category}`, {
     defaultValue:
       category === "stocks"
@@ -16,7 +16,9 @@ function getRwaTabLabel(category: "stocks" | "indices" | "commodities" | "others
           ? "Indices"
           : category === "commodities"
             ? "Commodities"
-            : "Others",
+            : category === "fx"
+              ? "FX"
+              : "Others",
   }) as string;
 }
 
@@ -47,8 +49,21 @@ function createCustomRwaTabs(): MarketTabConfig[] {
       },
     },
     {
+      id: "rwa-fx",
+      name: getRwaTabLabel("fx"),
+      match: (market) => {
+        const record = market as RwaMarketRecord;
+        return !!record.isRwa && record.rwaCategory === "fx";
+      },
+    },
+    {
       id: "rwa-unclassified",
       name: getRwaTabLabel("others"),
+      isVisible: (symbolList) =>
+        symbolList.some((market) => {
+          const record = market as RwaMarketRecord;
+          return !!record.isRwa && record.rwaCategory === "unclassified";
+        }),
       match: (market) => {
         const record = market as RwaMarketRecord;
         return !!record.isRwa && record.rwaCategory === "unclassified";
@@ -60,11 +75,10 @@ function createCustomRwaTabs(): MarketTabConfig[] {
 export const marketCategoryConfig: MarketCategoryConfig = (original) => {
   const result: MarketTabConfig[] = [];
   const customRwaTabs = createCustomRwaTabs();
-  const tradFiLabel = i18n.t("common.rwa", { defaultValue: "TradFi" }) as string;
 
   for (const tab of original) {
     if ("type" in tab && tab.type === "rwa") {
-      result.push({ ...tab, name: tradFiLabel }, ...customRwaTabs);
+      result.push(...customRwaTabs);
       continue;
     }
     result.push(tab);

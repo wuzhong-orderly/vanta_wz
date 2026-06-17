@@ -45,6 +45,7 @@
   "markets.rwaCategory.stocks": "Stocks",
   "markets.rwaCategory.indices": "Indices",
   "markets.rwaCategory.commodities": "Commodities",
+  "markets.rwaCategory.fx": "FX",
   "markets.rwaCategory.others": "Others",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta is not available in your region. Access to Vanta products and services is restricted in certain jurisdictions, including regions subject to sanctions restrictions or where our services are not eligible for use. For more information, please see our Terms of Use. If you believe this is an error, please refresh the page or contact our support team on Telegram."

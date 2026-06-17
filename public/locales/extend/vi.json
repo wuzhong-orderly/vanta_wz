@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "Co phieu",
   "markets.rwaCategory.indices": "Chi so",
   "markets.rwaCategory.commodities": "Hang hoa",
+  "markets.rwaCategory.fx": "Ngoai hoi",
   "markets.rwaCategory.others": "Khac",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta không khả dụng tại khu vực của bạn. Quyền truy cập vào các sản phẩm và dịch vụ của Vanta bị hạn chế tại một số khu vực pháp lý nhất định, bao gồm các khu vực chịu hạn chế trừng phạt hoặc nơi dịch vụ của chúng tôi không đủ điều kiện để sử dụng. Để biết thêm thông tin, vui lòng xem Điều khoản sử dụng của chúng tôi. Nếu bạn cho rằng đây là lỗi, vui lòng làm mới trang hoặc liên hệ với đội ngũ hỗ trợ của chúng tôi trên Telegram."

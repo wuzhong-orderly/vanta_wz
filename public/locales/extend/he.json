@@ -2,6 +2,7 @@
   "markets.rwaCategory.stocks": "מניות",
   "markets.rwaCategory.indices": "מדדים",
   "markets.rwaCategory.commodities": "סחורות",
+  "markets.rwaCategory.fx": "מט״ח",
   "markets.rwaCategory.others": "אחרים",
   "common.rwa": "TradFi",
   "extend.nav.futures": "חוזים עתידיים",

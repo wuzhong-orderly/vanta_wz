@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "Saham",
   "markets.rwaCategory.indices": "Indeks",
   "markets.rwaCategory.commodities": "Komoditas",
+  "markets.rwaCategory.fx": "Valas",
   "markets.rwaCategory.others": "Lainnya",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta tidak tersedia di wilayah Anda. Akses ke produk dan layanan Vanta dibatasi di yurisdiksi tertentu, termasuk wilayah yang tunduk pada pembatasan sanksi atau tempat layanan kami tidak memenuhi syarat untuk digunakan. Untuk informasi lebih lanjut, silakan lihat Ketentuan Penggunaan kami. Jika Anda yakin ini adalah kesalahan, silakan segarkan halaman atau hubungi tim dukungan kami di Telegram."

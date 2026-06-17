@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "Acoes",
   "markets.rwaCategory.indices": "Indices",
   "markets.rwaCategory.commodities": "Commodities",
+  "markets.rwaCategory.fx": "Cambio",
   "markets.rwaCategory.others": "Outros",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "A Vanta não está disponível na sua região. O acesso aos produtos e serviços da Vanta é restrito em determinadas jurisdições, incluindo regiões sujeitas a restrições de sanções ou onde nossos serviços não são elegíveis para uso. Para mais informações, consulte nossos Termos de Uso. Se você acredita que isso é um erro, atualize a página ou entre em contato com nossa equipe de suporte no Telegram."

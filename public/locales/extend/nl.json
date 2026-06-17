@@ -38,6 +38,7 @@
   "markets.rwaCategory.stocks": "Aandelen",
   "markets.rwaCategory.indices": "Indices",
   "markets.rwaCategory.commodities": "Grondstoffen",
+  "markets.rwaCategory.fx": "Valuta",
   "markets.rwaCategory.others": "Overige",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta is niet beschikbaar in uw regio. Toegang tot producten en diensten van Vanta is beperkt in bepaalde rechtsgebieden, waaronder regio’s die onder sanctiebeperkingen vallen of waar onze diensten niet in aanmerking komen voor gebruik. Raadpleeg onze Gebruiksvoorwaarden voor meer informatie. Als u denkt dat dit een fout is, vernieuw dan de pagina of neem contact op met ons supportteam via Telegram."

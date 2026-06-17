@@ -4,6 +4,7 @@ import mappingJson from "@/data/rwa-category-mapping.json";
 export type RwaDisplayCategory =
   | "stocks"
   | "indices"
+  | "fx"
   | "commodities"
   | "unclassified";
 
@@ -17,6 +18,7 @@ type MarketLike = Pick<
 const RWA_DISPLAY_CATEGORIES = new Set<RwaDisplayCategory>([
   "stocks",
   "indices",
+  "fx",
   "commodities",
   "unclassified",
 ]);

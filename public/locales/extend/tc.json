@@ -35,6 +35,7 @@
   "markets.rwaCategory.stocks": "股票",
   "markets.rwaCategory.indices": "指數",
   "markets.rwaCategory.commodities": "大宗商品",
+  "markets.rwaCategory.fx": "外匯",
   "markets.rwaCategory.others": "其他",
   "common.rwa": "传统金融",
   "extend.nav.futures": "合約",

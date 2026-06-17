@@ -40,6 +40,7 @@
   "markets.rwaCategory.stocks": "주식",
   "markets.rwaCategory.indices": "지수",
   "markets.rwaCategory.commodities": "원자재",
+  "markets.rwaCategory.fx": "외환",
   "markets.rwaCategory.others": "기타",
   "common.rwa": "TradFi",
   "restrictedInfo.description.default": "Vanta는 귀하의 지역에서 사용할 수 없습니다. Vanta 제품 및 서비스에 대한 접근은 제재 제한이 적용되는 지역 또는 당사 서비스 이용 자격이 없는 지역을 포함한 특정 관할권에서 제한됩니다. 자세한 내용은 이용 약관을 확인해 주세요. 오류라고 생각되면 페이지를 새로고침하거나 Telegram에서 지원팀에 문의해 주세요."
