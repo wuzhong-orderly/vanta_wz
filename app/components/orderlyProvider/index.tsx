@@ -372,7 +372,12 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 	const languageByCode = new Map(defaultLanguages.map(lang => [lang.localCode, lang]));
 	const filteredLanguages = availableLanguages
 		.map(code => languageByCode.get(code))
-		.filter((lang): lang is (typeof defaultLanguages)[number] => Boolean(lang));
+		.filter((lang): lang is (typeof defaultLanguages)[number] => Boolean(lang))
+		.map(lang => (
+			lang.localCode === 'zh'
+				? { ...lang, displayName: '简体中文(马来西亚)' }
+				: lang
+		));
 
 	const themes: ThemeConfig[] = [
 		{
